@@ -11,7 +11,10 @@ class HttpRequest : public HttpPacket {
 		std::string _target;
 
 	public:
-		HttpRequest(std::string header, std::string body, std::string httpMethod, std::string target);
+		HttpRequest(std::string header, std::string body, std::string httpMethod, std::string target):HttpPacket(header, body){
+			_httpMethod = httpMethod;
+			_target = target;
+		}
 };
 
 #endif
