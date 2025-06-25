@@ -6,13 +6,9 @@ class Config{
 		int _listen;
 
 	public:
-		Config(int listen){ // testConstructor
-			_listen = listen;
-		}
+		Config(int listen);
 
-		int getListen(){
-			return _listen;
-		}
+		int getListen();
 };
 
 #endif

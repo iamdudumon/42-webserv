@@ -1,20 +1,17 @@
 #ifndef HTTPREQUEST_HPP
-#define HTTPREQUEST_HPP
+# define HTTPREQUEST_HPP
 
-#include <string>
+# include <string>
 
-#include "Http.hpp"
+# include "HttpPacket.hpp"
 
-class HttpRequest : public Http {
+class HttpRequest : public HttpPacket {
 	private:
 		std::string _httpMethod;
 		std::string _target;
 
 	public:
-		HttpRequest(std::string header, std::string body, std::string httpMethod, std::string target):Http(header, body){
-			_httpMethod = httpMethod;
-			_target = target;
-		}
+		HttpRequest(std::string header, std::string body, std::string httpMethod, std::string target);
 };
 
 #endif

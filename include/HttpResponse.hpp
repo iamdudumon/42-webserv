@@ -1,20 +1,17 @@
 #ifndef HTTPRESPONSE_HPP
-#define HTTPRESPONSE_HPP
+# define HTTPRESPONSE_HPP
 
-#include <string>
+# include <string>
 
-#include "Http.hpp"
+# include "HttpPacket.hpp"
 
-class HttpResponse : public Http {
+class HttpResponse : public HttpPacket {
 	private:
 		int _statusCode;
-		std::string _statusText; // htpp 스펙상 정의된
+		std::string _statusText;
 
 	public:
-		HttpResponse(std::string header, std::string body, int statusCode) : Http(header, body) {
-			_statusCode = statusCode;
-			_statusText = "OK"; // 추후 상태 코드에 따라 변경 예정
-		}
+		HttpResponse(std::string header, std::string body, int statusCode);
 };
 
 #endif
