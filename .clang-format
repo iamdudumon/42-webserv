@@ -1,0 +1,22 @@
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Always
+AlignConsecutiveDeclarations: true
+
+# Preprocessor directive 스타일
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+
+# #include, #define 등에서 # 뒤에 공백 하나
+IndentPPDirectives: AfterHash
+
+# 변수 선언에서 타입과 변수명 사이 탭
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+# 접근 지정자 들여쓰기 1탭
+AccessModifierOffset: -4
+IndentAccessModifiers: true
