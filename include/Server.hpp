@@ -4,13 +4,16 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "Config.hpp"
 #include "HttpParser.hpp"
+#include "EpollManager.hpp"
 
 class Server {
 	private:
@@ -20,6 +23,7 @@ class Server {
 		int				   _socketOption;
 		int				   _addressSize;
 		struct sockaddr_in _address;
+		EpollManager	   epollManager;
 
 		void		initAddress();
 		void		initServer();

@@ -15,18 +15,19 @@ void Server::initAddress() {
 }
 
 int Server::validateFunction(int returnValue) {
-	if (returnValue < 0) 
+	if (returnValue < 0)
 		std::cout << "error" << std::endl;//throw "error";	 // 추후 exception 발생으로 수정
 	return returnValue;
 }
 
 void Server::initServer() {
-	_serverSocket = validateFunction(socket(PF_INET, SOCK_STREAM, 0));
+	_serverSocket = validateFunction(socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0));
 	validateFunction(setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR,
 								&_socketOption, sizeof(_socketOption)));
 	validateFunction(bind(_serverSocket, (struct sockaddr*) &_address,
 							sizeof(_address)));
 	validateFunction(listen(_serverSocket, 10));
+	epollManager.initEpoll(_serverSocket);
 }
 
 void Server::loopServer() {
