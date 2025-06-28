@@ -6,7 +6,8 @@ STD = -std=c++98
 
 TARGET = ex02
 
-SRCS = src/main.cpp
+SRCS = src/main.cpp\
+	src/Server.cpp
 
 #HEADER = 
 
