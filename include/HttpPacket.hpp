@@ -12,6 +12,10 @@ class HttpPacket {
 	public:
 		HttpPacket(std::string header, std::string body): _version("HTTP/1.1"), _header(header), _body(body) {}
 
+		std::string	getBody() {
+			return _body;
+		}
+
 };
 
 #endif
