@@ -22,18 +22,20 @@ class Server {
 		int				   _clientSocket;
 		int				   _socketOption;
 		int				   _addressSize;
-		struct sockaddr_in _address;
-		EpollManager	   epollManager;
+		struct sockaddr_in _serverAddress;
+		struct sockaddr_in _clientAddress;
+		EpollManager	   _epollManager;
 
 		void		initAddress();
 		void		initServer();
 		void		loopServer();
-		void		writeHttpPacket();
-		void		writeSocket(std::string rawData);
-		int			validateFunction(int returnValue);
-		std::string readSocket();
-		HttpRequest readHttpPacket();
-
+		void		writeHttpPacket(int socketFd);
+		void		handleEvents();
+		void		writeSocket(int socketFd, std::string rawData);
+		int			validateFunction(int returnValue, std::string type);
+		std::string readSocket(int socketFd);
+		HttpRequest readHttpPacket(int socketFd);
+		
 	public:
 		Server(Config config);
 
