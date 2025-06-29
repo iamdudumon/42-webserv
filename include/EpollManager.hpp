@@ -24,7 +24,7 @@ class EpollManager {
 		}
 
 		void	addEpollFd(int socketFd) {
-			_event.events = EPOLLIN;
+			_event.events = EPOLLIN | EPOLLRDHUP;
 			_event.data.fd = socketFd;
 			epoll_ctl(_epollFd, EPOLL_CTL_ADD, socketFd, &_event);
 		}
@@ -35,7 +35,7 @@ class EpollManager {
 		}
 
 		void	waitEvent() {
-			if ((_eventCount = (epoll_wait(_epollFd, (struct epoll_event *)_epollEvents.data(), EPOLL_SIZE, -1))) == -1)
+			if ((_eventCount = (epoll_wait(_epollFd, (struct epoll_event *)_epollEvents.data(), EPOLL_SIZE, 1000))) == -1)
 				std::cout << "error" << std::endl; // throw 변경
 		}
 
@@ -47,11 +47,11 @@ class EpollManager {
 			return _eventCount;
 		}
 
-		int	getEpollEventsFdAt(int index) {
+		struct epoll_event	getEpollEventsAt(int index) {
 			if (index < 0 || static_cast<int>(_epollEvents.size()) <= index) {
 				std::cout << "error" << std::endl; // throw 변경
 			}
-			return _epollEvents[index].data.fd;
+			return _epollEvents[index];
 		}
 };
 
