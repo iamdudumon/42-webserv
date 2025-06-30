@@ -7,6 +7,7 @@
 #include <sys/epoll.h>
 
 #include "Server.hpp"
+#include "EpollCounter.hpp"
 
 class EpollManager {
 	private:
@@ -15,8 +16,11 @@ class EpollManager {
 		std::vector<struct epoll_event> _epollEvents;
 		struct epoll_event _event;
 		int	_eventCount;
+		EpollCounter	_epollCounter;
 
 	public:
+		EpollManager(): _epollCounter(EPOLL_SIZE) {}
+
 		void	initEpoll(int serverSocket) {
 			_epollFd = epoll_create(EPOLL_SIZE);
 			_epollEvents.resize(EPOLL_SIZE);
@@ -24,14 +28,20 @@ class EpollManager {
 		}
 
 		void	addEpollFd(int socketFd) {
+			if (!_epollCounter.addFd(socketFd)) {
+				deleteEpollFd(_epollCounter.popFd());
+				_epollCounter.addFd(socketFd);
+			}
 			_event.events = EPOLLIN | EPOLLRDHUP;
 			_event.data.fd = socketFd;
 			epoll_ctl(_epollFd, EPOLL_CTL_ADD, socketFd, &_event);
 		}
 
 		void	deleteEpollFd(int socketFd) {
-			epoll_ctl(_epollFd, EPOLL_CTL_DEL, socketFd, NULL);
-			close(socketFd);
+			if (_epollCounter.deleteFd(socketFd)) {
+				epoll_ctl(_epollFd, EPOLL_CTL_DEL, socketFd, NULL);
+				close(socketFd);
+			}
 		}
 
 		void	waitEvent() {

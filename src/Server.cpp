@@ -42,18 +42,15 @@ void	Server::handleEvents() {
 	for (int i = 0; i < _epollManager.getEventCount(); i++) {
 		if (_epollManager.getEpollEventsAt(i).data.fd == _serverSocket) {
 			_clientSocket = validateFunction(
-			accept(_serverSocket, (struct sockaddr*) &_clientAddress,
-					(socklen_t*) &_addressSize), "accept");
+			validateFunction(accept(_serverSocket, (struct sockaddr*) &_clientAddress,
+					(socklen_t*) &_addressSize), "accept"), "accept");
 			std::cout << "new client :" << _clientSocket << std::endl;
 			_epollManager.addEpollFd(_clientSocket);
 		}
 		else {
 			HttpRequest httpRequest = readHttpPacket(_epollManager.getEpollEventsAt(i).data.fd);
-			// eof 검사로직 추가
-			if (_epollManager.getEpollEventsAt(i).events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+			if (_epollManager.getEpollEventsAt(i).events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
 				_epollManager.deleteEpollFd(_epollManager.getEpollEventsAt(i).data.fd);
-				std::cout << "delete" << std::endl;
-			}
 			else
 				writeHttpPacket(_epollManager.getEpollEventsAt(i).data.fd);
 		}
@@ -61,12 +58,13 @@ void	Server::handleEvents() {
 }
 
 std::string Server::readSocket(int socketFd) {
-	char buffer[30000] = {0};  // 추후 루프 혹은 멀티플렉싱 처리를 통해 긴 요청 응답 가능하게 변경
+	char buffer[test] = {0};  // 추후 루프 혹은 멀티플렉싱 처리를 통해 긴 요청 응답 가능하게 변경
+	int readSize;
+	std::string request = "";
 
-	if (read(socketFd, buffer, 30000) == 0) {
-		return "";
+	while ((readSize = read(socketFd, buffer, 30000)) != 0) {
+		if (readSize)
 	}
-	std::string request(buffer);
 	return request;
 }
 
