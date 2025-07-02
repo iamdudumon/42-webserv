@@ -58,7 +58,7 @@ void	Server::handleEvents() {
 }
 
 std::string Server::readSocket(int socketFd) {
-	char buffer[test] = {0};  // 추후 루프 혹은 멀티플렉싱 처리를 통해 긴 요청 응답 가능하게 변경
+	char buffer[30000] = {0};  // 추후 루프 혹은 멀티플렉싱 처리를 통해 긴 요청 응답 가능하게 변경
 	int readSize;
 	std::string request = "";
 
