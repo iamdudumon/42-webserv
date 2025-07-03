@@ -15,6 +15,11 @@ class HttpResponse : public HttpPacket {
 			_statusCode = statusCode;
 			_statusText = "OK"; // 추후 상태 코드에 따라 변경 예정
 		}
+
+		std::string getRawData() {
+			std::string rawData = "HTTP/1.1 200 OK\nContent-Length: 4\nContent-Type: text/html\n\ntest";
+			return rawData;
+		}
 };
 
 #endif
