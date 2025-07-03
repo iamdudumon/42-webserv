@@ -13,7 +13,12 @@ class Body {
 		HTTP::ContentType::Value _type;
 
 	public:
-		std::vector<uint8_t>&	 getData() const;
+		Body();
+		~Body();
+		Body(const Body& copy);
+		Body& operator=(const Body& copy);
+
+		const std::vector<uint8_t>&	 getData() const;
 		HTTP::ContentType::Value getType() const;
 };
 
