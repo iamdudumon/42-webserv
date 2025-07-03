@@ -12,6 +12,7 @@ class HttpResponse : public HttpPacket {
 
 	public:
 		HttpResponse(std::string header, std::string body, int statusCode);
+		std::string getRawData();
 };
 
 #endif
