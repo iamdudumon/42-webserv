@@ -17,6 +17,17 @@ class ConfigParser {
 
 		std::string readFromFile(std::string& filePath);
 		void		tokenize(std::string&);
+		//bool		validateIdx(unsigned long) const;
+		bool		expectToken(unsigned long, const std::string& expected) const;
+		void		parseListen(unsigned long&);
+		void		parseServerName(unsigned long&);
+		void		parseIndex(unsigned long&);
+		void		parseRoot(unsigned long&);
+		void		parseLocationRoot(ConfigLocation&, unsigned long&);
+		void		parseLocationIndex(ConfigLocation&, unsigned long&);
+		void		parseLocationLimitExcept(ConfigLocation&, unsigned long&);
+		void		parseLocation(unsigned long&);
+		void		parse();
 
 	public:
 		ConfigParser() {}

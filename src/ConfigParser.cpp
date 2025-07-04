@@ -50,13 +50,119 @@ void	ConfigParser::tokenize(std::string& readFile) {
 		_tokens.push_back(token);
 }
 
+//bool ConfigParser::validateIdx(unsigned long i) const {
+//	if (i >= _tokens.size())
+//		throw ConfigParserException("[emerg] Invalid configuration");
+//	return true;
+//}
+
+bool ConfigParser::expectToken(unsigned long i, const std::string& expected) const {
+	if (_tokens.at(i) != expected)
+		throw ConfigParserException("[emerg] Invalid configuration: expected '" + expected + "'");
+	return true;
+}
+
+void ConfigParser::parseListen(unsigned long& i) {
+	char*	end = NULL;
+	long	port = std::strtol(_tokens.at(i).c_str(), &end, 10);
+	if (*end != 0)
+		throw ConfigParserException("[emerg] Invalid configuration: Listen '" + _tokens.at(i) + "'");
+	else if (port < 0 || 65535 < port)
+		throw ConfigParserException("[emerg] Invalid configuration: port range");
+	_config.setListen(port);
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseServerName(unsigned long& i) {
+	_config.setServerName(_tokens.at(i));
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseIndex(unsigned long& i) {
+	_config.setIndex(_tokens.at(i));
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseRoot(unsigned long& i) {
+	_config.setRoot(_tokens.at(i));
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseLocationRoot(ConfigLocation& tmp,
+									 unsigned long& i) {
+	tmp.setRoot(_tokens.at(i));
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseLocationIndex(ConfigLocation& tmp,
+									  unsigned long& i) {
+	tmp.setIndex(_tokens.at(i));
+	expectToken(++i, ";");
+}
+
+void ConfigParser::parseLocationLimitExcept(ConfigLocation& tmpLocation,
+											unsigned long&	i) {
+	std::vector<std::string> tmpMethods;
+	while (_tokens.at(i) != ";") {
+		tmpMethods.push_back(_tokens[i++]);
+	}
+	tmpLocation.setLimitExcept(tmpMethods);
+	expectToken(i, ";");
+}
+
+void ConfigParser::parseLocation(unsigned long& i) {
+	std::string		url = _tokens.at(i);
+	expectToken(++i, "{");
+	
+	ConfigLocation	tmpLocation;
+	while (_tokens.at(i) != "}") {
+		if (_tokens.at(i) == "root")
+			parseLocationRoot(tmpLocation, ++i);
+		else if (_tokens.at(i) == "index")
+			parseLocationIndex(tmpLocation, ++i);
+		else if (_tokens.at(i) == "limit_except")
+			parseLocationLimitExcept(tmpLocation, ++i);
+		else
+			throw ConfigParserException("[emerg] Invalid configuration");
+	}
+	expectToken(i, "}");
+	++i;
+	_config.setLocation(url, tmpLocation);
+}
+
+void ConfigParser::parse() {
+	try {
+		unsigned long i = 0;
+		expectToken(i, "server");
+		expectToken(++i, "{");
+		while (_tokens.at(i) != "}") {
+			if (_tokens.at(i) == "listen")
+				parseListen(++i);
+			else if (_tokens.at(i) == "server_name")
+				parseServerName(++i);
+			else if (_tokens.at(i) == "index")
+				parseIndex(++i);
+			else if (_tokens.at(i) == "root")
+				parseRoot(++i);
+			else if (_tokens.at(i) == "location")
+				parseLocation(++i);
+			else
+				throw ConfigParserException("[emerg] Invalid configuration: Unknown directive " + _tokens.at(i));
+		}
+		expectToken(i, "}");
+	}
+	catch (const std::out_of_range& e) {
+		ConfigParserException("[emerg] Invalid configuration");
+	}
+}
+
 void ConfigParser::loadFromFile(std::string filePath) {
 	std::string	readFile = readFromFile(filePath);
 	tokenize(readFile);
-	//parse();
+	parse();
 	//for (unsigned long i = 0; i < _tokens.size(); i++)
 	//{
-	//	std::cout << _tokens[i] << "\n";
+	//	std::cout << _tokens.at(i) << "\n";
 	//}
 }
 
