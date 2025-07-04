@@ -1,6 +1,6 @@
 NAME = webserv
 CC = clang++
-CFLAGS = -Wall -Wextra -Werror -std=c++98
+CFLAGS = -Wall -Wextra -Werror #-std=c++98
 
 INC_DIR		=	include/
 SRC_DIR		=	src/
@@ -8,6 +8,7 @@ OBJ_DIR		=	obj/
 
 SRC_FILES =	main.cpp \
 			ConfigParser.cpp \
+			ConfigLocation.cpp \
 			Config.cpp
 OBJ_FILES = $(SRC_FILES:.cpp=.o)
 

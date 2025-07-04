@@ -50,12 +50,6 @@ void	ConfigParser::tokenize(std::string& readFile) {
 		_tokens.push_back(token);
 }
 
-//bool ConfigParser::validateIdx(unsigned long i) const {
-//	if (i >= _tokens.size())
-//		throw ConfigParserException("[emerg] Invalid configuration");
-//	return true;
-//}
-
 bool ConfigParser::expectToken(unsigned long i, const std::string& expected) const {
 	if (_tokens.at(i) != expected)
 		throw ConfigParserException("[emerg] Invalid configuration: expected '" + expected + "'");
@@ -88,8 +82,7 @@ void ConfigParser::parseRoot(unsigned long& i) {
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseLocationRoot(ConfigLocation& tmp,
-									 unsigned long& i) {
+void ConfigParser::parseLocationRoot(ConfigLocation& tmp, unsigned long& i) {
 	tmp.setRoot(_tokens.at(i));
 	expectToken(++i, ";");
 }
@@ -115,7 +108,7 @@ void ConfigParser::parseLocation(unsigned long& i) {
 	expectToken(++i, "{");
 	
 	ConfigLocation	tmpLocation;
-	while (_tokens.at(i) != "}") {
+	while (_tokens.at(++i) != "}") {
 		if (_tokens.at(i) == "root")
 			parseLocationRoot(tmpLocation, ++i);
 		else if (_tokens.at(i) == "index")
@@ -126,7 +119,6 @@ void ConfigParser::parseLocation(unsigned long& i) {
 			throw ConfigParserException("[emerg] Invalid configuration");
 	}
 	expectToken(i, "}");
-	++i;
 	_config.setLocation(url, tmpLocation);
 }
 
@@ -135,7 +127,7 @@ void ConfigParser::parse() {
 		unsigned long i = 0;
 		expectToken(i, "server");
 		expectToken(++i, "{");
-		while (_tokens.at(i) != "}") {
+		while (_tokens.at(++i) != "}") {
 			if (_tokens.at(i) == "listen")
 				parseListen(++i);
 			else if (_tokens.at(i) == "server_name")
@@ -152,7 +144,7 @@ void ConfigParser::parse() {
 		expectToken(i, "}");
 	}
 	catch (const std::out_of_range& e) {
-		ConfigParserException("[emerg] Invalid configuration");
+		throw ConfigParserException("[emerg] Invalid configuration");
 	}
 }
 
@@ -160,6 +152,19 @@ void ConfigParser::loadFromFile(std::string filePath) {
 	std::string	readFile = readFromFile(filePath);
 	tokenize(readFile);
 	parse();
+	std::cout << "port: " << _config.getListen() << '\n'
+			  << "index: " << _config.getIndex() << '\n'
+			  << "server_name: " << _config.getServerName() << '\n'
+			  << "root: " << _config.getRoot() << "\n\n";
+	for (auto i = _config.getLocation().begin(); i != _config.getLocation().end() ; i++) {
+		std::cout << "location: " << i->first << "\n";
+		std::cout << "index: " << i->second.getIndex() << "\n";
+		std::cout << "root: " << i->second.getRoot() << "\n";
+		std::cout << "method: ";
+		for (unsigned long k = 0; k < i->second.getLimitExcept().size(); k++)
+			std::cout << i->second.getLimitExcept()[k] << " ";
+		std::cout << "\n\n";
+	}
 	//for (unsigned long i = 0; i < _tokens.size(); i++)
 	//{
 	//	std::cout << _tokens.at(i) << "\n";

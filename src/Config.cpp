@@ -16,10 +16,28 @@ Config&	Config::operator=(const Config& other)
 	return *this;
 }
 
-int	Config::getListen() {
-	return _listen;
+// Config.hpp 내부에 추가할 getter 함수들
+int Config::getListen() const {
+    return _listen;
 }
 
+const std::string& Config::getServerName() const {
+    return _server_name;
+}
+
+const std::string& Config::getIndex() const {
+    return _index;
+}
+
+const std::string& Config::getRoot() const {
+    return _root;
+}
+
+const std::map<std::string, ConfigLocation>& Config::getLocation() const {
+    return _location;
+}
+
+// Config.hpp 내부에 추가할 setter 함수들
 void Config::setListen(int listen) {
     _listen = listen;
 }

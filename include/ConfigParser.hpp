@@ -1,6 +1,7 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
+#include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iostream>

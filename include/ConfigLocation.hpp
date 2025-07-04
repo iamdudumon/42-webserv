@@ -13,6 +13,10 @@ class ConfigLocation {
 	public:
 		ConfigLocation() {}
 		~ConfigLocation() {}
+		const std::string& getRoot() const;
+    	const std::string& getIndex() const;
+    	const std::vector<std::string>& getLimitExcept() const;
+		
 		void	setRoot(const std::string& root);
 		void	setIndex(const std::string& index);
 		void	setLimitExcept(const std::vector<std::string>& methods);

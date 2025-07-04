@@ -13,3 +13,15 @@ void ConfigLocation::setIndex(const std::string& index) {
 void ConfigLocation::setLimitExcept(const std::vector<std::string>& methods) {
     _limit_except = methods;
 }
+
+const std::string& ConfigLocation::getRoot() const {
+    return _root;
+}
+
+const std::string& ConfigLocation::getIndex() const {
+    return _index;
+}
+
+const std::vector<std::string>& ConfigLocation::getLimitExcept() const {
+    return _limit_except;
+}

@@ -1,4 +1,5 @@
 #include "../include/Config.hpp"
+#include "../include/ConfigParser.hpp"
 
 int main(int ac, char **av) {
 	try
