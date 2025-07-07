@@ -6,6 +6,11 @@ Config::Config()
 	_server_name = "localhost";
 }
 
+Config::Config(const Config& other)
+{
+	*this = other;
+}
+
 Config&	Config::operator=(const Config& other)
 {
 	_listen = other._listen;
@@ -16,7 +21,6 @@ Config&	Config::operator=(const Config& other)
 	return *this;
 }
 
-// Config.hpp 내부에 추가할 getter 함수들
 int Config::getListen() const {
     return _listen;
 }
@@ -37,7 +41,6 @@ const std::map<std::string, ConfigLocation>& Config::getLocation() const {
     return _location;
 }
 
-// Config.hpp 내부에 추가할 setter 함수들
 void Config::setListen(int listen) {
     _listen = listen;
 }
@@ -55,6 +58,7 @@ void Config::setRoot(const std::string& root) {
 }
 
 void Config::setLocation(const std::string& path, const ConfigLocation& location) {
+	if (_location.find(path) != _location.end())
+		throw ConfigException("[emerg] Invalid configuration: duplicate location");
     _location[path] = location;
 }
-

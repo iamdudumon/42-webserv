@@ -4,7 +4,7 @@
 #include <map>
 
 #include "ConfigLocation.hpp"
-// #include "ConfigParser.hpp"
+#include "ConfigException.hpp"
 
 class Config {
 	private:
@@ -16,7 +16,7 @@ class Config {
 
 	public:
 		Config();
-		Config(const Config&) {}
+		Config(const Config&);
 		Config& operator=(const Config&);
 		~Config() {}
 		
