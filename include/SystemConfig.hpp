@@ -3,10 +3,8 @@
 
 namespace SystemConfig {
 	namespace Size {
-		enum Value {
-			EPOLL_SIZE = 64,
-			BUFFER_SIZE = 30000
-		};
+			static const std::size_t EPOLL_SIZE = 64;
+			static const std::size_t BUFFER_SIZE = 30000;
 	}
 }
 
