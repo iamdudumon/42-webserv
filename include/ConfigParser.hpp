@@ -37,19 +37,8 @@ class ConfigParser {
 		ConfigParser() {}
 		~ConfigParser() {}
 
-		// Config	getConfig();
 		static bool validateArgument(int);
 		void		loadFromFile(std::string filePath);
 };
 
 #endif
-
-// server {
-//     listen 80;
-//     server_name example.com;
-
-//     location / {
-//         root /var/www/html;
-//         index index.html;
-//     }
-// }
