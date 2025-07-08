@@ -13,11 +13,11 @@ class Header {
 	public:
 		Header();
 		~Header();
-		Header(const Header& copy);
-		Header& operator=(const Header& copy);
+		Header(const Header&);
+		Header& operator=(const Header&);
 
-		const std::string& get(std::string key) const;
-		void			   set(std::string key, std::string value);
+		const std::string& get(std::string) const;
+		void			   set(std::string, std::string);
 };
 
 #endif

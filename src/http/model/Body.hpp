@@ -15,8 +15,8 @@ class Body {
 	public:
 		Body();
 		~Body();
-		Body(const Body& copy);
-		Body& operator=(const Body& copy);
+		Body(const Body&);
+		Body& operator=(const Body&);
 
 		const std::vector<uint8_t>&	 getData() const;
 		HTTP::ContentType::Value getType() const;
