@@ -11,6 +11,8 @@ class HttpRequest : public HttpPacket {
 		HTTP::StartLine _startLine;
 
 	public:
+		HttpRequest(const HTTP::StartLine&, const Header&, const Body&);
+
 		const HTTP::StartLine& getStartLine() const;
 };
 

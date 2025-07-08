@@ -12,6 +12,8 @@ class HttpResponse : public HttpPacket {
 		HTTP::StatusLine _statusLine;
 
 	public:
+		HttpResponse(const HTTP::StatusLine&, const Header&, const Body&);
+
 		const HTTP::StatusLine& getStatusLine() const;
 };
 

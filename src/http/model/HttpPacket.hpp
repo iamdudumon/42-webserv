@@ -12,6 +12,8 @@ class HttpPacket {
 		Header		_header;
 		Body		_body;
 
+		HttpPacket(const Header&, const Body&);
+
 	public:
 		const std::string& getRawData() const;
 		const Header&	   getHeader() const;
