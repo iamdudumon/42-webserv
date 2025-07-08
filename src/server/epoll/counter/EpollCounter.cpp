@@ -1,11 +1,9 @@
 #include "EpollCounter.hpp"
 
-EpollCounter::EpollCounter() : _epollMaxCount(SystemConfig::Size::EPOLL_SIZE) {
-	_epollCount = 0;
-}
+EpollCounter::EpollCounter() : _epollCount(0) {}
 
 bool EpollCounter::addFd(int fd) {
-	if (_epollCount >= _epollMaxCount) return false;
+	if (_epollCount >= SystemConfig::Size::EPOLL_SIZE) return false;
 	_epollFdVector.push_back(fd);
 	_epollCount++;
 	return true;

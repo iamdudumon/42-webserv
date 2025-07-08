@@ -30,11 +30,11 @@ void EpollManager::waitEvent() {
 		throw EpollException("wait event");
 }
 
-int EpollManager::getEpollFd() { return _epollFd; }
+int EpollManager::getEpollFd() const { return _epollFd; }
 
-int EpollManager::getEventCount() { return _eventCount; }
+int EpollManager::getEventCount() const { return _eventCount; }
 
-struct epoll_event EpollManager::getEpollEventsAt(int index) {
+const struct epoll_event& EpollManager::getEpollEventsAt(int index) const {
 	if (index < 0 || static_cast<int>(_epollEvents.size()) <= index) {
 		throw EpollException("events out of bounds");
 	}
