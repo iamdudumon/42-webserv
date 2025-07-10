@@ -13,21 +13,21 @@
 
 class EpollManager {
 	private:
-		int				 _epollFd;
-		static const int EPOLL_SIZE = SystemConfig::Size::EPOLL_SIZE;
+		static const int   EPOLL_SIZE = SystemConfig::Size::EPOLL_SIZE;
+		int				   _epollFd;
+		int				   _eventCount;
+		struct epoll_event _event;
 		std::vector<struct epoll_event> _epollEvents;
-		struct epoll_event				_event;
-		int								_eventCount;
 		EpollCounter					_epollCounter;
 
 	public:
-		void			   initEpoll(int serverSocket);
-		void			   addEpollFd(int socketFd);
-		void			   deleteEpollFd(int socketFd);
-		void			   waitEvent();
-		int				   getEpollFd();
-		int				   getEventCount();
-		struct epoll_event getEpollEventsAt(int index);
+		int						  getEpollFd() const;
+		int						  getEventCount() const;
+		const struct epoll_event& getEpollEventsAt(int) const;
+		void					  initEpoll(int);
+		void					  addEpollFd(int);
+		void					  deleteEpollFd(int);
+		void					  waitEvent();
 };
 
 #endif
