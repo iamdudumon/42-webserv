@@ -1,4 +1,4 @@
-#include "../include/Config.hpp"
+#include "Config.hpp"
 
 Config::Config() {
 	_listen = 80;
@@ -52,8 +52,8 @@ void Config::setRoot(const std::string& root) {
     _root = root;
 }
 
-void Config::setLocation(const std::string& path, const ConfigLocation& location) {
+void Config::setLocation(const std::string& path) {
 	if (_location.find(path) != _location.end())
 		throw ConfigException("[emerg] Invalid configuration: duplicate location");
-    _location[path] = location;
+    _location[path] = ConfigLocation();
 }

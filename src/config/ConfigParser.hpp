@@ -5,13 +5,11 @@
 #include <cstdlib>
 #include <exception>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 
 #include "Config.hpp"
-#include "ConfigException.hpp"
+#include "exception/ConfigException.hpp"
 
 class ConfigParser {
 	private:
@@ -20,15 +18,14 @@ class ConfigParser {
 
 		std::string readFromFile(std::string& filePath);
 		void		tokenize(std::string&);
-		//bool		validateIdx(unsigned long) const;
 		bool		expectToken(unsigned long, const std::string& expected) const;
 		void		parseListen(Config&, unsigned long&);
 		void		parseServerName(Config&, unsigned long&);
 		void		parseIndex(Config&, unsigned long&);
 		void		parseRoot(Config&, unsigned long&);
-		void		parseLocationRoot(ConfigLocation&, unsigned long&);
-		void		parseLocationIndex(ConfigLocation&, unsigned long&);
-		void		parseLocationLimitExcept(ConfigLocation&, unsigned long&);
+		void		parseLocationRoot(Config&, const std::string&, unsigned long&);
+		void		parseLocationIndex(Config&, const std::string&, unsigned long&);
+		void		parseLocationAllowMethod(Config&, const std::string&, unsigned long&);
 		void		parseLocation(Config&, unsigned long&);
 		Config		parseServer(unsigned long&);
 		void		parse();

@@ -1,15 +1,15 @@
 NAME = webserv
 CC = clang++
-CFLAGS = -Wall -Wextra -Werror -std=c++98 #-fsanitize=address
+CFLAGS = #-Wall -Wextra -Werror #-std=c++98 #-fsanitize=address
 
-INC_DIR		=	include/
-SRC_DIR		=	src/
-OBJ_DIR		=	obj/
+INC_DIR	= include/
+SRC_DIR	= src/
+OBJ_DIR	= obj/
 
 SRC_FILES =	main.cpp \
-			ConfigParser.cpp \
-			ConfigLocation.cpp \
-			Config.cpp
+			config/ConfigParser.cpp \
+			config/ConfigLocation.cpp \
+			config/Config.cpp
 OBJ_FILES = $(SRC_FILES:.cpp=.o)
 
 SRC =	$(addprefix $(SRC_DIR), $(SRC_FILES))
@@ -21,7 +21,7 @@ $(NAME): $(OBJ)
 	@$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -I $(INC_DIR) -o $@ -c $<
 	
 clean:

@@ -1,4 +1,4 @@
-#include "../include/ConfigParser.hpp"
+#include "ConfigParser.hpp"
 
 bool ConfigParser::validateArgument(int ac) {
 	if (ac > 2)
@@ -51,91 +51,94 @@ bool ConfigParser::expectToken(unsigned long i, const std::string& expected) con
 	return true;
 }
 
-void ConfigParser::parseListen(Config& tmpConfig, unsigned long& i) {
+void ConfigParser::parseListen(Config& Config, unsigned long& i) {
 	char*	end = NULL;
 	long	port = std::strtol(_tokens.at(i).c_str(), &end, 10);
 	if (*end != 0)
 		throw ConfigException("[emerg] Invalid configuration: Listen '" + _tokens.at(i) + "'");
 	else if (port < 0 || 65535 < port)
 		throw ConfigException("[emerg] Invalid configuration: port range");
-	tmpConfig.setListen(port);
+	Config.setListen(port);
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseServerName(Config& tmpConfig, unsigned long& i) {
-	tmpConfig.setServerName(_tokens.at(i));
+void ConfigParser::parseServerName(Config& Config, unsigned long& i) {
+	Config.setServerName(_tokens.at(i));
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseIndex(Config& tmpConfig, unsigned long& i) {
-	tmpConfig.setIndex(_tokens.at(i));
+void ConfigParser::parseIndex(Config& Config, unsigned long& i) {
+	Config.setIndex(_tokens.at(i));
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseRoot(Config& tmpConfig, unsigned long& i) {
-	tmpConfig.setRoot(_tokens.at(i));
+void ConfigParser::parseRoot(Config& Config, unsigned long& i) {
+	Config.setRoot(_tokens.at(i));
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseLocationRoot(ConfigLocation& tmp, unsigned long& i) {
-	tmp.setRoot(_tokens.at(i));
+void ConfigParser::parseLocationRoot(Config& Config,
+									 const std::string& url,
+									 unsigned long& i) {
+	Config.setLocationRoot(url, _tokens.at(i));
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseLocationIndex(ConfigLocation& tmp,
+void ConfigParser::parseLocationIndex(Config& Config,
+									  const std::string& url,
 									  unsigned long& i) {
-	tmp.setIndex(_tokens.at(i));
+	Config.setLocationIndex(url, _tokens.at(i));
 	expectToken(++i, ";");
 }
 
-void ConfigParser::parseLocationLimitExcept(ConfigLocation& tmpLocation,
-											unsigned long&	i) {
+void ConfigParser::parseLocationAllowMethod(Config& Config,
+											const std::string& url,
+											unsigned long& i) {
 	std::vector<std::string> tmpMethods;
 	while (_tokens.at(i) != ";") {
 		tmpMethods.push_back(_tokens[i++]);
 	}
-	tmpLocation.setAllowMethod(tmpMethods);
+	Config.setLocationAllowMethod(url, tmpMethods);
 	expectToken(i, ";");
 }
 
-void ConfigParser::parseLocation(Config& tmpConfig, unsigned long& i) {
+void ConfigParser::parseLocation(Config& Config, unsigned long& i) {
 	std::string		url = _tokens.at(i);
+	Config.setLocation(url);
 	expectToken(++i, "{");
-	ConfigLocation	tmpLocation;	
 	while (_tokens.at(++i) != "}") {
 		if (_tokens.at(i) == "root")
-			parseLocationRoot(tmpLocation, ++i);
+			parseLocationRoot(Config, url, ++i);
 		else if (_tokens.at(i) == "index")
-			parseLocationIndex(tmpLocation, ++i);
+			parseLocationIndex(Config, url, ++i);
 		else if (_tokens.at(i) == "allow_method")
-			parseLocationLimitExcept(tmpLocation, ++i);
+			parseLocationAllowMethod(Config, url, ++i);
 		else
 			throw ConfigException("[emerg] Invalid configuration: Unknown directive " + _tokens.at(i));
 	}
 	expectToken(i, "}");
-	tmpConfig.setLocation(url, tmpLocation);
 }
 
 Config ConfigParser::parseServer(unsigned long& i) {
-	Config	tmpConfig;
+	Config	Config;
 	expectToken(i, "server");
 	expectToken(++i, "{");
 	while (_tokens.at(++i) != "}") {
 		if (_tokens.at(i) == "listen")
-			parseListen(tmpConfig, ++i);
+			parseListen(Config, ++i);
 		else if (_tokens.at(i) == "server_name")
-			parseServerName(tmpConfig, ++i);
+			parseServerName(Config, ++i);
 		else if (_tokens.at(i) == "index")
-			parseIndex(tmpConfig, ++i);
+			parseIndex(Config, ++i);
 		else if (_tokens.at(i) == "root")
-			parseRoot(tmpConfig, ++i);
+			parseRoot(Config, ++i);
 		else if (_tokens.at(i) == "location")
-			parseLocation(tmpConfig, ++i);
+			parseLocation(Config, ++i);
 		else
 			throw ConfigException("[emerg] Invalid configuration: Unknown directive " + _tokens.at(i));
 	}
 	expectToken(i, "}");
-	return tmpConfig;
+	return Config;
 }
 
 void ConfigParser::parse() {
@@ -157,26 +160,21 @@ void ConfigParser::loadFromFile(std::string filePath) {
 	std::string	readFile = readFromFile(filePath);
 	tokenize(readFile);
 	parse();
-	//for (unsigned long i = 0; i < _configs.size(); i++) {
-	//	std::cout << "port: " << _configs[i].getListen() << '\n'
-	//			  << "index: " << _configs[i].getIndex() << '\n'
-	//			  << "server_name: " << _configs[i].getServerName() << '\n'
-	//			  << "root: " << _configs[i].getRoot() << "\n\n";
-	//	for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
-	//		std::cout << "location: " << it->first << "\n";
-	//		std::cout << "index: " << it->second.getIndex() << "\n";
-	//		std::cout << "root: " << it->second.getRoot() << "\n";
-	//		std::cout << "method: ";
-	//		for (unsigned long k = 0; k < it->second.getLimitExcept().size(); k++)
-	//			std::cout << it->second.getLimitExcept()[k] << " ";
-	//		std::cout << "\n\n";
-	//	}
-	//}
+	for (unsigned long i = 0; i < _configs.size(); i++) {
+		std::cout << "Server\n";
+		std::cout << "port: " << _configs[i].getListen() << '\n'
+				  << "index: " << _configs[i].getIndex() << '\n'
+				  << "server_name: " << _configs[i].getServerName() << '\n'
+				  << "root: " << _configs[i].getRoot() << "\n\n";
+		for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
+			std::cout << "location:" << it->first << '\n';
+			std::cout << "Index: " << _configs[i].getLocationIndex(it->first) << '\n';
+			std::cout << "Root: " << _configs[i].getLocationRoot(it->first) << '\n';
+			std::cout << "Allow_method: ";
+			for (int k = 0; k < _configs[i].getLocationAllowMethod(it->first).size(); k++)
+				std::cout << _configs[i].getLocationAllowMethod(it->first)[k] << " ";
+			std::cout << "\n\n";
+		}
+		std::cout << "\n";
+	}
 }
-
-// Node("server")
-// └── Node("location", ["/admin"])
-//     ├── Node("limit_except", ["GET", "POST"])
-//     │   └── Node("deny", ["all"])
-//     ├── Node("root", ["/var/www/html"])
-//     └── Node("index", ["index.html"])
