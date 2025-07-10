@@ -32,12 +32,12 @@ class Server {
 		void		initAddress();
 		void		initServer();
 		void		loopServer();
-		void		writeHttpPacket(int socketFd, HttpResponse httpResponse);
+		void		writeHttpPacket(int, HttpResponse);
 		void		handleEvents();
-		void		writeSocket(int socketFd, std::string rawData);
-		int			validateFunction(int returnValue, std::string type);
-		std::string readSocket(int socketFd);
-		HttpRequest readHttpPacket(int socketFd);
+		void		writeSocket(int, std::string);
+		int			validateFunction(int, std::string);
+		std::string readSocket(int);
+		HttpRequest readHttpPacket(int);
 
 	public:
 		Server(Config config);
