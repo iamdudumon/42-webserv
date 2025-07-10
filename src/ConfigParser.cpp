@@ -94,7 +94,7 @@ void ConfigParser::parseLocationLimitExcept(ConfigLocation& tmpLocation,
 	while (_tokens.at(i) != ";") {
 		tmpMethods.push_back(_tokens[i++]);
 	}
-	tmpLocation.setLimitExcept(tmpMethods);
+	tmpLocation.setAllowMethod(tmpMethods);
 	expectToken(i, ";");
 }
 
@@ -107,10 +107,10 @@ void ConfigParser::parseLocation(Config& tmpConfig, unsigned long& i) {
 			parseLocationRoot(tmpLocation, ++i);
 		else if (_tokens.at(i) == "index")
 			parseLocationIndex(tmpLocation, ++i);
-		else if (_tokens.at(i) == "limit_except")
+		else if (_tokens.at(i) == "allow_method")
 			parseLocationLimitExcept(tmpLocation, ++i);
 		else
-			throw ConfigException("[emerg] Invalid configuration");
+			throw ConfigException("[emerg] Invalid configuration: Unknown directive " + _tokens.at(i));
 	}
 	expectToken(i, "}");
 	tmpConfig.setLocation(url, tmpLocation);
@@ -157,21 +157,21 @@ void ConfigParser::loadFromFile(std::string filePath) {
 	std::string	readFile = readFromFile(filePath);
 	tokenize(readFile);
 	parse();
-	for (unsigned long i = 0; i < _configs.size(); i++) {
-		std::cout << "port: " << _configs[i].getListen() << '\n'
-				  << "index: " << _configs[i].getIndex() << '\n'
-				  << "server_name: " << _configs[i].getServerName() << '\n'
-				  << "root: " << _configs[i].getRoot() << "\n\n";
-		for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
-			std::cout << "location: " << it->first << "\n";
-			std::cout << "index: " << it->second.getIndex() << "\n";
-			std::cout << "root: " << it->second.getRoot() << "\n";
-			std::cout << "method: ";
-			for (unsigned long k = 0; k < it->second.getLimitExcept().size(); k++)
-				std::cout << it->second.getLimitExcept()[k] << " ";
-			std::cout << "\n\n";
-		}
-	}
+	//for (unsigned long i = 0; i < _configs.size(); i++) {
+	//	std::cout << "port: " << _configs[i].getListen() << '\n'
+	//			  << "index: " << _configs[i].getIndex() << '\n'
+	//			  << "server_name: " << _configs[i].getServerName() << '\n'
+	//			  << "root: " << _configs[i].getRoot() << "\n\n";
+	//	for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
+	//		std::cout << "location: " << it->first << "\n";
+	//		std::cout << "index: " << it->second.getIndex() << "\n";
+	//		std::cout << "root: " << it->second.getRoot() << "\n";
+	//		std::cout << "method: ";
+	//		for (unsigned long k = 0; k < it->second.getLimitExcept().size(); k++)
+	//			std::cout << it->second.getLimitExcept()[k] << " ";
+	//		std::cout << "\n\n";
+	//	}
+	//}
 }
 
 // Node("server")

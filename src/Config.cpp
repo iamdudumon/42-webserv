@@ -1,18 +1,13 @@
 #include "../include/Config.hpp"
 
-Config::Config()
-{
+Config::Config() {
 	_listen = 80;
 	_server_name = "localhost";
 }
 
-Config::Config(const Config& other)
-{
-	*this = other;
-}
+Config::Config(const Config& other) { *this = other; }
 
-Config&	Config::operator=(const Config& other)
-{
+Config& Config::operator=(const Config& other) {
 	_listen = other._listen;
 	_server_name = other._server_name;
 	_index = other._index;

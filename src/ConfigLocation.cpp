@@ -10,8 +10,8 @@ void ConfigLocation::setIndex(const std::string& index) {
 }
 
 // limit_except 전체 교체 setter
-void ConfigLocation::setLimitExcept(const std::vector<std::string>& methods) {
-    _limit_except = methods;
+void ConfigLocation::setAllowMethod(const std::vector<std::string>& methods) {
+    _allow_method = methods;
 }
 
 const std::string& ConfigLocation::getRoot() const {
@@ -23,5 +23,5 @@ const std::string& ConfigLocation::getIndex() const {
 }
 
 const std::vector<std::string>& ConfigLocation::getLimitExcept() const {
-    return _limit_except;
+    return _allow_method;
 }
