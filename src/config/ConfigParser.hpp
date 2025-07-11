@@ -9,6 +9,7 @@
 #include <string>
 
 #include "Config.hpp"
+#include "ConfigValidator.hpp"
 #include "exception/ConfigException.hpp"
 
 class ConfigParser {
@@ -36,6 +37,7 @@ class ConfigParser {
 
 		static bool validateArgument(int);
 		void		loadFromFile(std::string filePath);
+		const std::vector<Config>& getConfigs();
 };
 
 #endif
