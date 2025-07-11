@@ -161,20 +161,27 @@ void ConfigParser::loadFromFile(std::string filePath) {
 	tokenize(readFile);
 	parse();
 	for (unsigned long i = 0; i < _configs.size(); i++) {
-		std::cout << "Server\n";
-		std::cout << "port: " << _configs[i].getListen() << '\n'
-				  << "index: " << _configs[i].getIndex() << '\n'
-				  << "server_name: " << _configs[i].getServerName() << '\n'
-				  << "root: " << _configs[i].getRoot() << "\n\n";
-		for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
-			std::cout << "location:" << it->first << '\n';
-			std::cout << "Index: " << _configs[i].getLocationIndex(it->first) << '\n';
-			std::cout << "Root: " << _configs[i].getLocationRoot(it->first) << '\n';
-			std::cout << "Allow_method: ";
-			for (int k = 0; k < _configs[i].getLocationAllowMethod(it->first).size(); k++)
-				std::cout << _configs[i].getLocationAllowMethod(it->first)[k] << " ";
-			std::cout << "\n\n";
-		}
-		std::cout << "\n";
+		ConfigValidator::validate(_configs[i]);
 	}
+	//for (unsigned long i = 0; i < _configs.size(); i++) {
+	//	std::cout << "Server\n";
+	//	std::cout << "port: " << _configs[i].getListen() << '\n'
+	//			  << "index: " << _configs[i].getIndex() << '\n'
+	//			  << "server_name: " << _configs[i].getServerName() << '\n'
+	//			  << "root: " << _configs[i].getRoot() << "\n\n";
+	//	for (auto it = _configs[i].getLocation().begin(); it != _configs[i].getLocation().end() ; it++) {
+	//		std::cout << "location:" << it->first << '\n';
+	//		std::cout << "Index: " << _configs[i].getLocationIndex(it->first) << '\n';
+	//		std::cout << "Root: " << _configs[i].getLocationRoot(it->first) << '\n';
+	//		std::cout << "Allow_method: ";
+	//		for (int k = 0; k < _configs[i].getLocationAllowMethod(it->first).size(); k++)
+	//			std::cout << _configs[i].getLocationAllowMethod(it->first)[k] << " ";
+	//		std::cout << "\n\n";
+	//	}
+	//	std::cout << "\n";
+	//}
+}
+
+const std::vector<Config>& ConfigParser::getConfigs() {
+	return _configs;
 }

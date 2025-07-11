@@ -9,6 +9,7 @@ OBJ_DIR	= obj/
 SRC_FILES =	main.cpp \
 			config/ConfigParser.cpp \
 			config/ConfigLocation.cpp \
+			config/ConfigValidator.cpp \
 			config/Config.cpp
 OBJ_FILES = $(SRC_FILES:.cpp=.o)
 

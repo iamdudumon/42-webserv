@@ -1,8 +1,9 @@
 #include "Config.hpp"
 
 Config::Config() {
-	_listen = 80;
-	_server_name = "localhost";
+	_listen = -1;
+	_server_name = "_";
+	_index = "index.html";
 }
 
 Config::Config(const Config& other) { *this = other; }
@@ -55,5 +56,17 @@ void Config::setRoot(const std::string& root) {
 void Config::setLocation(const std::string& path) {
 	if (_location.find(path) != _location.end())
 		throw ConfigException("[emerg] Invalid configuration: duplicate location");
-    _location[path] = ConfigLocation();
+	ConfigLocation location;
+	location._root = _root;
+	location._index = _index;
+    _location[path] = location;
 }
+
+
+//🚨 반드시 명시해야 하는 필수 지시어들
+//지시어
+//listen: 서버가 어떤 포트에서 요청을 받을지 지정 (예: listen 80;)
+//location: 요청 경로에 따라 처리 방식 지정 (없으면 요청 처리 불가)
+//root 또는 proxy_pass: 요청을 어디로 전달할지 지정 (정적 파일 또는 프록시)
+
+//이 항목들이 없으면 Nginx가 요청을 어떻게 처리해야 할지 몰라서 에러가 발생하거나 요청을 무시할 수 있어요.
