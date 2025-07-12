@@ -1,3 +1,5 @@
+//Server.hpp
+#pragma once
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
@@ -12,11 +14,13 @@
 #include <string>
 #include <vector>
 
-#include "Config.hpp"
-#include "EpollManager.hpp"
-#include "HttpParser.hpp"
-#include "SystemConfig.hpp"
+#include "../../include/Config.hpp"
+#include "manager/EpollManager.hpp"
+#include "../../include/ConfigParser.hpp"
+#include "../../include/SystemConfig.hpp"
 #include "exception/ServerException.hpp"
+#include "../http/model/HttpRequest.hpp"
+#include "../http/model/HttpResponse.hpp"
 
 class Server {
 	private:

@@ -1,3 +1,5 @@
+//ConfigParser.hpp
+#pragma once
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPASER_HPP
 

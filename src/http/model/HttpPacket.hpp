@@ -1,3 +1,5 @@
+//HttpPacket.hpp
+#pragma once
 #ifndef HTTPPACKET_HPP
 #define HTTPPACKET_HPP
 

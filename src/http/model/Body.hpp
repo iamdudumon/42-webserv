@@ -4,6 +4,7 @@
 #define BODY_HPP
 
 #include <vector>
+#include <cstdint>
 
 #include "../types/HttpEnums.hpp"
 
