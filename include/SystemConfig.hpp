@@ -1,3 +1,5 @@
+//SystemConfig.hpp
+#pragma once
 #ifndef SYSTEMCONFIG_HPP
 #define SYSTEMCONFIG_HPP
 

@@ -1,3 +1,5 @@
+//EpollManager.hpp
+#pragma once
 #ifndef EPOLLMANAGER_HPP
 #define EPOLLMANAGER_HPP
 
@@ -6,10 +8,10 @@
 #include <iostream>
 #include <vector>
 
-#include "EpollCounter.hpp"
-#include "EpollException.hpp"
-#include "Server.hpp"
-#include "SystemConfig.hpp"
+#include "../counter/EpollCounter.hpp"
+#include "../exception/EpollException.hpp"
+#include "../../Server.hpp"
+#include "../../../include/SystemConfig.hpp"
 
 class EpollManager {
 	private:

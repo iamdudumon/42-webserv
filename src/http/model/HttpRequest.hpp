@@ -1,3 +1,5 @@
+//HttpRequest.hpp
+#pragma once
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 

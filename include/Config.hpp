@@ -1,3 +1,5 @@
+//Config.hpp
+#pragma once
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
