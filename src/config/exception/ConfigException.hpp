@@ -1,3 +1,6 @@
+// ConfigException.hpp
+#pragma once
+
 #ifndef CONFIG_EXCEPTION_HPP
 #define CONFIG_EXCEPTION_HPP
 

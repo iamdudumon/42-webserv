@@ -1,4 +1,4 @@
-#include "config/Config.hpp"
+#include "config/model/Config.hpp"
 #include "config/ConfigParser.hpp"
 
 int main(int ac, char **av) {
