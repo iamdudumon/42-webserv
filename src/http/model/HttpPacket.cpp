@@ -15,9 +15,13 @@ const Header& HttpPacket::getHeader() const { return _header; }
 
 const Body& HttpPacket::getBody() const { return _body; }
 
-const HTTP::StartLine& HttpPacket::getStartLine() const { return _startLine; }
+const HTTP::StartLine& HttpPacket::getStartLine() const {
+	if (!_isRequest) throw std::logic_error("HttpPacket: not a request.");
+	return _startLine;
+}
 
 const HTTP::StatusLine& HttpPacket::getStatusLine() const {
+	if (_isRequest) throw std::logic_error("HttpPacket: not a response.");
 	return _statusLine;
 }
 

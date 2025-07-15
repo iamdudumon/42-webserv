@@ -2,6 +2,7 @@
 #ifndef HTTPPACKET_HPP
 #define HTTPPACKET_HPP
 
+#include <stdexcept>
 #include <string>
 
 #include "../types/PacketLine.hpp"
@@ -16,10 +17,10 @@ class HttpPacket {
 		Body			 _body;
 		bool			 _isRequest;
 
+	public:
 		HttpPacket(const HTTP::StartLine&, const Header&, const Body&);
 		HttpPacket(const HTTP::StatusLine&, const Header&, const Body&);
 
-	public:
 		const HTTP::StartLine&	getStartLine() const;
 		const HTTP::StatusLine& getStatusLine() const;
 		const Header&			getHeader() const;
