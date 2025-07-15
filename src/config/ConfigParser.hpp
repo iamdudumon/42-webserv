@@ -46,7 +46,7 @@ class ConfigParser {
 		~ConfigParser() {}
 
 		static bool validateArgument(int);
-		void		loadFromFile(std::string filePath);
+		void		loadFromFile(std::string&);
 		const std::vector<Config>& getConfigs();
 };
 

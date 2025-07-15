@@ -104,13 +104,13 @@ void ConfigParser::parseLocationAllowMethod(const std::vector<std::string>& toke
 	while (tokens.at(i) != ";") {
 		tmpMethods.push_back(tokens[i++]);
 	}
-	Config.setLocationAllowMethod(url, tmpMethods);
+	Config.setLocationAllowMethods(url, tmpMethods);
 	expectToken(tokens, i, ";");
 }
 
 void ConfigParser::parseLocation(const std::vector<std::string>& tokens, Config& Config, unsigned long& i) {
 	std::string		url = tokens.at(i);
-	Config.setLocation(url);
+	Config.initLocation(url);
 	expectToken(tokens, ++i, "{");
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "root")
@@ -162,7 +162,7 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 	}
 }
 
-void ConfigParser::loadFromFile(std::string filePath) {
+void ConfigParser::loadFromFile(std::string& filePath) {
 	std::string	readFile = readFromFile(filePath);
 	parse(tokenize(readFile));
 	for (unsigned long i = 0; i < _configs.size(); i++) {

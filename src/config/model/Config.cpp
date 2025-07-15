@@ -1,10 +1,6 @@
 #include "Config.hpp"
 
-Config::Config() {
-	_listen = -1;
-	_server_name = "_";
-	_index = "index.html";
-}
+Config::Config() : _listen(-1), _server_name("_"), _index("index.html") {}
 
 Config::Config(const Config& other) { *this = other; }
 
@@ -18,7 +14,7 @@ Config& Config::operator=(const Config& other) {
 }
 
 int Config::getListen() const {
-    return _listen;
+	return _listen;
 }
 
 const std::string& Config::getServerName() const {
@@ -53,7 +49,7 @@ void Config::setRoot(const std::string& root) {
     _root = root;
 }
 
-void Config::setLocation(const std::string& path) {
+void Config::initLocation(const std::string& path) {
 	if (_location.find(path) != _location.end())
 		throw ConfigException("[emerg] Invalid configuration: duplicate location");
 	ConfigLocation location;
@@ -70,8 +66,8 @@ void Config::setLocationIndex(const std::string& path, const std::string& index)
     _location[path]._index = index;
 }
 
-void Config::setLocationAllowMethod(const std::string& path, const std::vector<std::string>& methods) {
-    _location[path]._allow_method = methods;
+void Config::setLocationAllowMethods(const std::string& path, const std::vector<std::string>& methods) {
+    _location[path]._allow_methods = methods;
 }
 
 const std::string& Config::getLocationRoot(const std::string& path) const {
@@ -90,12 +86,12 @@ const std::string& Config::getLocationIndex(const std::string& path) const {
     return it->second._index;
 }
 
-const std::vector<std::string>& Config::getLocationAllowMethod(const std::string& path) const {
+const std::vector<std::string>& Config::getLocationAllowMethods(const std::string& path) const {
     auto it = _location.find(path);
     if (it == _location.end()) {
         throw ConfigException("Invalid path: " + path);
     }
-    return it->second._allow_method;
+    return it->second._allow_methods;
 }
 
 //🚨 반드시 명시해야 하는 필수 지시어들
