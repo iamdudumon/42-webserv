@@ -1,25 +1,31 @@
-//HttpPacket.hpp
-#pragma once
+// HttpPacket.hpp
 #ifndef HTTPPACKET_HPP
 #define HTTPPACKET_HPP
 
+#include <stdexcept>
 #include <string>
 
+#include "../types/PacketLine.hpp"
 #include "Body.hpp"
 #include "Header.hpp"
 
 class HttpPacket {
-	protected:
-		std::string _rawData;
-		Header		_header;
-		Body		_body;
-
-		HttpPacket(const Header&, const Body&);
+	private:
+		HTTP::StartLine	 _startLine;
+		HTTP::StatusLine _statusLine;
+		Header			 _header;
+		Body			 _body;
+		bool			 _isRequest;
 
 	public:
-		const std::string& getRawData() const;
-		const Header&	   getHeader() const;
-		const Body&		   getBody() const;
+		HttpPacket(const HTTP::StartLine&, const Header&, const Body&);
+		HttpPacket(const HTTP::StatusLine&, const Header&, const Body&);
+
+		const HTTP::StartLine&	getStartLine() const;
+		const HTTP::StatusLine& getStatusLine() const;
+		const Header&			getHeader() const;
+		const Body&				getBody() const;
+		const bool				isRequest() const;
 };
 
 #endif
