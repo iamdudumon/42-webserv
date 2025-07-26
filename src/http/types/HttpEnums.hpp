@@ -27,6 +27,15 @@ namespace HTTP {
 					return "UNKNOWN_METHOD";
 			}
 		}
+
+		inline const Value to_value(const std::string& str) {
+			if (str == "GET") return GET;
+			if (str == "POST") return POST;
+			if (str == "DELETE")
+				return DELETE;
+			else
+				return UNKNOWN_METHOD;
+		}
 	}
 
 	namespace StatusCode {
@@ -43,6 +52,33 @@ namespace HTTP {
 		};
 
 		inline const char* to_string(Value v) {
+			switch (v) {
+				case OK:
+					return "200";
+				case Created:
+					return "201";
+				case NoContent:
+					return "204";
+				case BadRequest:
+					return "400";
+				case Unauthorized:
+					return "401";
+				case Forbidden:
+					return "403";
+				case NotFound:
+					return "404";
+				case InternalServerError:
+					return "500";
+				default:
+					return "0";
+			}
+		}
+
+		inline const Value to_value(const std::string& str) {
+			return Value(std::stoi(str));
+		}
+
+		inline const char* to_reasonPhrase(Value v) {
 			switch (v) {
 				case OK:
 					return "OK";
@@ -68,7 +104,7 @@ namespace HTTP {
 
 	namespace ContentType {
 		enum Value {
-			UNKNOWN,
+			UNKNOWN_TYPE,
 			CONTENT_TEXT_PLAIN,
 			CONTENT_TEXT_HTML,
 			CONTENT_MULTIPART_FORMDATA,
@@ -88,6 +124,14 @@ namespace HTTP {
 				default:
 					return "unknown-type";
 			}
+		}
+
+		inline const Value to_value(const std::string& str) {
+			if (str == "text/plain") return CONTENT_TEXT_PLAIN;
+			if (str == "text/html") return CONTENT_TEXT_HTML;
+			if (str == "multipart/form-data") return CONTENT_MULTIPART_FORMDATA;
+			if (str == "application/json") return CONTENT_APPLICATION_JSON;
+			return UNKNOWN_TYPE;
 		}
 	}
 }

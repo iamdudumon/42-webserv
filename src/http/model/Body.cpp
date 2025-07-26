@@ -19,3 +19,10 @@ const std::vector<uint8_t>& Body::getData() const {
 }
 
 HTTP::ContentType::Value Body::getType() const { return _type; }
+
+void Body::append(const char* data, size_t len) {
+	_data.insert(_data.end(), reinterpret_cast<const uint8_t*>(data),
+				 reinterpret_cast<const uint8_t*>(data) + len);
+}
+
+void Body::setType(HTTP::ContentType::Value type) { this->_type = type; }
