@@ -31,25 +31,7 @@ void HttpParser::parse() {
 		_currentState->parse(this, line);
 		_currentState->handleNextState(this);
 
-		// BodyState 또는 DoneState로 전환되면 본문 처리로 넘어간다.
-		if (dynamic_cast<BodyState*>(_currentState) ||
-			dynamic_cast<DoneState*>(_currentState))
-			break;
-	}
-
-	// BodyState일 경우 Content-Length 만큼 그대로 읽어 전달
-	BodyState* bodyState = dynamic_cast<BodyState*>(_currentState);
-	if (bodyState) {
-		size_t		contentLength = 0;
-		std::string lengthStr = _packet->getHeader().get("Content-Length");
-		if (!lengthStr.empty()) contentLength = std::stoi(lengthStr);
-
-		std::string body(contentLength, '\0');
-		stream.read(&body[0], contentLength);
-		body.resize(stream.gcount());
-
-		bodyState->parse(this, body);
-		bodyState->handleNextState(this);
+		if (dynamic_cast<DoneState*>(_currentState)) break;
 	}
 
 	// 파싱 종료 후 DoneState에서도 한 번 호출돼 결과 설정
