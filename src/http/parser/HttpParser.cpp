@@ -37,8 +37,9 @@ void HttpParser::parse() {
 		// DoneState의 handleNextState는 상태 변경 안 함
 		// State 클래스 내부에서 DoneState로 전환된 후, DoneState를 검사
 	}
-	// 파싱 종료 후 DoneState에서도 한 번 호출돼 결과 설정
-	_currentState->parse(this, std::string());
+        // 파싱 종료 후 DoneState에서도 한 번 호출돼 결과 설정
+        _currentState->parse(this, std::string());
+        _currentState->handleNextState(this);
 }
 
 // 파싱 결과 반환: HttpPacket 복사

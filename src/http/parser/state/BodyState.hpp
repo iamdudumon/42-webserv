@@ -3,6 +3,7 @@
 #define BODYSTATE_HPP
 
 #include <string>
+#include <algorithm>
 
 #include "ParseState.hpp"
 
