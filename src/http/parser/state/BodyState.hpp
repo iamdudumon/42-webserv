@@ -2,8 +2,8 @@
 #ifndef BODYSTATE_HPP
 #define BODYSTATE_HPP
 
-#include <string>
 #include <algorithm>
+#include <string>
 
 #include "ParseState.hpp"
 
