@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "../HttpParser.hpp"
 #include "ParseState.hpp"
 
 class HeaderState : public ParseState {

@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "HttpParser.hpp"
+class HttpParser;
 
 // 추상 상태 클래스
 class ParseState {

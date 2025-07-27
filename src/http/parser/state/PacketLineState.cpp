@@ -1,5 +1,6 @@
 // PacketLineState.cpp
 #include "PacketLineState.hpp"
+#include "../HttpParser.hpp"
 
 #include <sstream>
 

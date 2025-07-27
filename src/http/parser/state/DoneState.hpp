@@ -4,12 +4,13 @@
 
 #include <string>
 
+#include "../HttpParser.hpp"
 #include "ParseState.hpp"
 
 class DoneState : public ParseState {
 	public:
-		virtual void parse(HttpParser*, const std::string&) {}
-		virtual void handleNextState(HttpParser*) {}
+		virtual void parse(HttpParser*, const std::string&);
+		virtual void handleNextState(HttpParser*);
 };
 
 #endif

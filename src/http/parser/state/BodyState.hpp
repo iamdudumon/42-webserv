@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <string>
 
+#include "../HttpParser.hpp"
 #include "ParseState.hpp"
 
 class BodyState : public ParseState {
