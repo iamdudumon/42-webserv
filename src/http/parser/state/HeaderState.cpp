@@ -12,9 +12,10 @@ void HeaderState::parse(HttpParser* parser, const std::string& line) {
 	std::string key = line.substr(0, sep);
 	std::string value = line.substr(sep + 1);
 	// 값 앞뒤 공백 제거
-	while (!value.empty() && (value.front() == ' ' || value.front() == '\t'))
+	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
-	while (!value.empty() && (value.back() == ' ' || value.back() == '\t'))
+	while (!value.empty() &&
+		   (value[value.size() - 1] == ' ' || value[value.size() - 1] == '\t'))
 		value.erase(value.size() - 1);
 
 	parser->_packet->addHeader(key, value);
@@ -22,7 +23,7 @@ void HeaderState::parse(HttpParser* parser, const std::string& line) {
 
 void HeaderState::handleNextState(HttpParser* parser) {
 	std::string lentghStr = parser->_packet->getHeader().get("Content-Length");
-	size_t contentLength = lentghStr != "" ? std::stoi(lentghStr) : 0;
-	
+	size_t		contentLength = lentghStr != "" ? str_toint(lentghStr) : 0;
+
 	if (_done) parser->changeState(new BodyState(contentLength));
 }

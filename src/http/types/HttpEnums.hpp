@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <string>
 
+#include "../../utils/str_utils.hpp"
+
 namespace HTTP {
 	namespace Method {
 		enum Value {
@@ -75,7 +77,7 @@ namespace HTTP {
 		}
 
 		inline const Value to_value(const std::string& str) {
-			return Value(std::stoi(str));
+			return Value(str_toint(str));
 		}
 
 		inline const char* to_reasonPhrase(Value v) {

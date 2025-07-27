@@ -1,8 +1,9 @@
 // PacketLineState.cpp
 #include "PacketLineState.hpp"
-#include "../HttpParser.hpp"
 
 #include <sstream>
+
+#include "../HttpParser.hpp"
 
 void PacketLineState::parse(HttpParser* parser, const std::string& line) {
 	std::istringstream iss(line);
@@ -10,13 +11,16 @@ void PacketLineState::parse(HttpParser* parser, const std::string& line) {
 
 	iss >> str1 >> str2 >> str3;
 	if (HTTP::Method::to_value(str1) !=
-		HTTP::Method::UNKNOWN_METHOD)  // Request
-		parser->_packet = new HttpPacket(
-			{HTTP::Method::to_value(str1), str2, str3}, Header(), Body());
-	else  // Response
-		parser->_packet =
-			new HttpPacket({"HTTP/1.1", HTTP::StatusCode::to_value(str2), str3},
-						   Header(), Body());
+		HTTP::Method::UNKNOWN_METHOD) {	 // Request
+		HTTP::StartLine startLine = {HTTP::Method::to_value(str1), str2, str3};
+
+		parser->_packet = new HttpPacket(startLine, Header(), Body());
+	} else {  // Response
+		HTTP::StatusLine statusLine = {"HTTP/1.1",
+									   HTTP::StatusCode::to_value(str2), str3};
+
+		parser->_packet = new HttpPacket(statusLine, Header(), Body());
+	}
 	_done = true;
 }
 
