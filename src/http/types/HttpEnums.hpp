@@ -30,7 +30,7 @@ namespace HTTP {
 			}
 		}
 
-		inline const Value to_value(const std::string& str) {
+		inline Value to_value(const std::string& str) {
 			if (str == "GET") return GET;
 			if (str == "POST") return POST;
 			if (str == "DELETE")
@@ -76,7 +76,7 @@ namespace HTTP {
 			}
 		}
 
-		inline const Value to_value(const std::string& str) {
+		inline Value to_value(const std::string& str) {
 			return Value(str_toint(str));
 		}
 
@@ -128,7 +128,7 @@ namespace HTTP {
 			}
 		}
 
-		inline const Value to_value(const std::string& str) {
+		inline Value to_value(const std::string& str) {
 			if (str == "text/plain") return CONTENT_TEXT_PLAIN;
 			if (str == "text/html") return CONTENT_TEXT_HTML;
 			if (str == "multipart/form-data") return CONTENT_MULTIPART_FORMDATA;

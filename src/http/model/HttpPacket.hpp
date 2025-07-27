@@ -25,7 +25,7 @@ class HttpPacket {
 		const HTTP::StatusLine& getStatusLine() const;
 		const Header&			getHeader() const;
 		const Body&				getBody() const;
-		const bool				isRequest() const;
+		bool					isRequest() const;
 
 		void addHeader(const std::string&, const std::string&);
 		void appendBody(const char*, size_t);
