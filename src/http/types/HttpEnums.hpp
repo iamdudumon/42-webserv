@@ -14,7 +14,7 @@ namespace HTTP {
 			UNKNOWN_METHOD,
 			GET,
 			POST,
-			DELETE,
+			DELETE
 		};
 
 		inline const char* to_string(Value v) {
@@ -50,7 +50,7 @@ namespace HTTP {
 			Unauthorized = 401,
 			Forbidden = 403,
 			NotFound = 404,
-			InternalServerError = 500,
+			InternalServerError = 500
 		};
 
 		inline const char* to_string(Value v) {
@@ -110,7 +110,7 @@ namespace HTTP {
 			CONTENT_TEXT_PLAIN,
 			CONTENT_TEXT_HTML,
 			CONTENT_MULTIPART_FORMDATA,
-			CONTENT_APPLICATION_JSON,
+			CONTENT_APPLICATION_JSON
 		};
 
 		inline const char* to_string(Value v) {
