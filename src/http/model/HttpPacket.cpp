@@ -25,4 +25,12 @@ const HTTP::StatusLine& HttpPacket::getStatusLine() const {
 	return _statusLine;
 }
 
-const bool HttpPacket::isRequest() const { return _isRequest; }
+bool HttpPacket::isRequest() const { return _isRequest; }
+
+void HttpPacket::addHeader(const std::string& key, const std::string& value) {
+	_header.set(key, value);
+}
+
+void HttpPacket::appendBody(const char* data, size_t len) {
+	_body.append(data, len);
+}

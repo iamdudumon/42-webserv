@@ -4,14 +4,13 @@
 #define BODY_HPP
 
 #include <vector>
-#include <cstdint>
 
 #include "../types/HttpEnums.hpp"
 
 class Body {
 	private:
-		std::vector<uint8_t>	 _data;
-		HTTP::ContentType::Value _type;
+		std::vector<unsigned char> _data;
+		HTTP::ContentType::Value   _type;
 
 	public:
 		Body();
@@ -19,8 +18,11 @@ class Body {
 		Body(const Body&);
 		Body& operator=(const Body&);
 
-		const std::vector<uint8_t>&	 getData() const;
-		HTTP::ContentType::Value getType() const;
+		const std::vector<unsigned char>& getData() const;
+		HTTP::ContentType::Value		  getType() const;
+
+		void append(const char*, size_t);
+		void setType(HTTP::ContentType::Value);
 };
 
 #endif
