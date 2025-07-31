@@ -19,7 +19,8 @@ void ConfigValidator::validate(const Config& config) {
 		const ConfigLocation& loc = it->second;
 
 		if (loc._root.empty()) {
-			throw ConfigException("nginx: [emerg] no \"root\" in location \"" + path + "\"");
+			throw ConfigException("nginx: [emerg] no \"root\" in location \"" +
+								  path + "\"");
 		}
 	}
 }
