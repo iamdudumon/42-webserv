@@ -17,7 +17,6 @@ class HttpParser {
 		std::string _rawData;
 		HttpPacket* _packet;
 
-		// 상태 클래스에서 접근 허용
 		friend class PacketLineState;
 		friend class HeaderState;
 		friend class BodyState;
@@ -27,9 +26,9 @@ class HttpParser {
 		HttpParser(const std::string&);
 		~HttpParser();
 
-		void	   parse();					  // 상태 기반 파싱 시작
-		HttpPacket getResult();				  // 최종 결과 반환
-		void	   changeState(ParseState*);  // 상태 전환 메서드
+		void	   parse();
+		HttpPacket getResult();
+		void	   changeState(ParseState*);
 };
 
 #endif

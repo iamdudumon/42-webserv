@@ -11,7 +11,7 @@ void HeaderState::parse(HttpParser* parser, const std::string& line) {
 
 	std::string key = line.substr(0, sep);
 	std::string value = line.substr(sep + 1);
-	// 값 앞뒤 공백 제거
+
 	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
 	while (!value.empty() &&

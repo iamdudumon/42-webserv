@@ -17,7 +17,7 @@ class BodyState : public ParseState {
 
 	private:
 		bool   _done;
-		size_t _remain;	 // Content‑Length 가정
+		size_t _remain;
 };
 
 #endif
