@@ -21,8 +21,9 @@ class Body {
 		const std::vector<unsigned char>& getData() const;
 		HTTP::ContentType::Value		  getType() const;
 
-		void append(const char*, size_t);
 		void setType(HTTP::ContentType::Value);
+
+		void append(const char*, size_t);
 };
 
 #endif
