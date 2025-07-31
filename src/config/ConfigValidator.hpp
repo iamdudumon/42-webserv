@@ -1,11 +1,9 @@
 // ConfigValidator.hpp
-#pragma once
-
 #ifndef CONFIG_VALIDATOR_HPP
 #define CONFIG_VALIDATOR_HPP
 
-#include "model/Config.hpp"
 #include "exception/ConfigException.hpp"
+#include "model/Config.hpp"
 
 class ConfigValidator {
 	public:

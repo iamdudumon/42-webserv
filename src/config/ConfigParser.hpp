@@ -1,6 +1,4 @@
 // ConfigParser.hpp
-#pragma once
-
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
@@ -18,7 +16,7 @@ class ConfigParser {
 	private:
 		std::vector<Config> _configs;
 
-		std::string readFromFile(std::string&);
+		std::string				 readFromFile(char*);
 		std::vector<std::string> tokenize(std::string&);
 		bool expectToken(const std::vector<std::string>&, unsigned long,
 						 const std::string&) const;
@@ -45,8 +43,8 @@ class ConfigParser {
 		ConfigParser() {}
 		~ConfigParser() {}
 
-		static bool validateArgument(int);
-		void		loadFromFile(std::string&);
+		bool					   validateArgument(int);
+		void					   loadFromFile(char*);
 		const std::vector<Config>& getConfigs();
 };
 
