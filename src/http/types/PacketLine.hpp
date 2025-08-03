@@ -1,5 +1,4 @@
-//PacketLine.hpp
-#pragma once
+// PacketLine.hpp
 #ifndef PACKET_LINE
 #define PACKET_LINE
 

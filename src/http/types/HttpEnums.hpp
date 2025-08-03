@@ -1,5 +1,4 @@
 // HttpEnums.hpp
-#pragma once
 #ifndef HTTPENUMS_HPP
 #define HTTPENUMS_HPP
 
