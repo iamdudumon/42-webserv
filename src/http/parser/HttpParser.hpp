@@ -2,6 +2,7 @@
 #ifndef HTTPPARSER_HPP
 #define HTTPPARSER_HPP
 
+#include <algorithm>
 #include <string>
 
 #include "../model/HttpPacket.hpp"

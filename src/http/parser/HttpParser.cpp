@@ -19,17 +19,19 @@ void HttpParser::changeState(ParseState* newState) {
 }
 
 void HttpParser::parse() {
-	std::istringstream stream(_rawData);
-	std::string		   line;
+	const char* start = _rawData.c_str();
+	const char* end = start + _rawData.length();
+	const char* crlf;
 
-	while (std::getline(stream, line)) {
-		if (!line.empty() && line[line.size() - 1] == '\r')
-			line.erase(line.size() - 1);
+	while ((crlf = std::search(start, end, "\r\n", "\r\n" + 2)) != end) {
+		std::string line(start, crlf);
 
 		_currentState->parse(this, line);
 		_currentState->handleNextState(this);
 
 		if (dynamic_cast<DoneState*>(_currentState)) break;
+
+		start = crlf + 2;
 	}
 
 	_currentState->parse(this, std::string());
