@@ -2,6 +2,7 @@
 #include "HeaderState.hpp"
 
 #include "../../../utils/str_utils.hpp"
+#include "../exception/HttpParseException.hpp"
 
 void HeaderState::parse(HttpParser* parser, const std::string& line) {
 	if (line.empty()) {
@@ -24,13 +25,15 @@ void HeaderState::parse(HttpParser* parser, const std::string& line) {
 void HeaderState::handleNextState(HttpParser* parser) {
 	if (!_done) return;
 
-	if (parser->_packet->getHeader().get("host").empty()) {
-		parser->changeState(new DoneState());
-		return;
-	}
+	if (parser->_packet->getHeader().get("host").empty())
+		throw HttpParseException("Host header is missing",
+								 HTTP::StatusCode::BadRequest);
 
 	std::string lentghStr = parser->_packet->getHeader().get("Content-Length");
 	size_t		contentLength = lentghStr != "" ? str_toint(lentghStr) : 0;
 
-	parser->changeState(new BodyState(contentLength));
+	if (contentLength == 0)
+		parser->changeState(new DoneState());
+	else
+		parser->changeState(new BodyState(contentLength));
 }

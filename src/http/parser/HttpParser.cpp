@@ -3,6 +3,8 @@
 
 #include <sstream>
 
+#include "exception/HttpParseException.hpp"
+
 HttpParser::HttpParser(const std::string& rawData)
 	: _currentState(new PacketLineState()), _rawData(rawData), _packet(NULL) {}
 
@@ -29,12 +31,19 @@ void HttpParser::parse() {
 		_currentState->parse(this, line);
 		_currentState->handleNextState(this);
 
-		if (dynamic_cast<DoneState*>(_currentState)) break;
+		if (dynamic_cast<DoneState*>(_currentState)) {
+			if (!std::string(crlf + 2, end).empty())
+				throw HttpParseException("Invalid Content-Length header value",
+										 HTTP::StatusCode::BadRequest);
+			return;
+		}
 
 		start = crlf + 2;
 	}
 
-	_currentState->parse(this, std::string());
+	if (!dynamic_cast<DoneState*>(_currentState))
+		throw HttpParseException("Malformed request: Invalid line ending",
+								 HTTP::StatusCode::BadRequest);
 }
 
 HttpPacket HttpParser::getResult() { return *_packet; }
