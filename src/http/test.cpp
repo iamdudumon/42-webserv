@@ -4,6 +4,7 @@
 #include "./model/HttpPacket.hpp"
 #include "./parser/HttpParser.hpp"
 #include "./parser/exception/HttpParseException.hpp"
+#include "./serializer/HttpSerializer.hpp"
 #include "./types/HttpEnums.hpp"
 
 // 파싱 및 결과 출력을 위한 함수
@@ -45,6 +46,45 @@ void test_request(const std::string& request_data) {
 			  << std::endl;
 }
 
+void test_serializer() {
+	std::cout << "--- Testing HttpSerializer ---" << std::endl;
+
+	// 1. 응답 생성
+	HTTP::StatusLine statusLine = {
+		"HTTP/1.1", HTTP::StatusCode::OK,
+		HTTP::StatusCode::to_reasonPhrase(HTTP::StatusCode::OK)};
+	HttpPacket responsePacket(statusLine, Header(), Body());
+
+	responsePacket.addHeader("Content-Type", "text/plain");
+	responsePacket.addHeader("Content-Length", "13");
+	responsePacket.appendBody("Hello, World!", 13);
+
+	// 2. 직렬화
+	std::string serializedResponse = HttpSerializer::serialize(responsePacket);
+
+	// 3. 결과 출력
+	std::cout << "--- Serialized Response ---" << std::endl;
+	std::cout << serializedResponse << std::endl;
+	std::cout << "---------------------------" << std::endl;
+
+	// 4. 예상 결과와 비교
+	std::string expectedResponse =
+		"HTTP/1.1 200 OK\r\n"
+		"content-length: 13\r\n"
+		"content-type: text/plain\r\n"
+		"\r\n"
+		"Hello, World!";
+	if (serializedResponse == expectedResponse) {
+		std::cout << "Test Result: SUCCESS" << std::endl;
+	} else {
+		std::cout << "Test Result: FAILED" << std::endl;
+		std::cout << "Expected:" << std::endl << expectedResponse << std::endl;
+		std::cout << "Got:" << std::endl << serializedResponse << std::endl;
+	}
+	std::cout << "========================================" << std::endl
+			  << std::endl;
+}
+
 int main() {
 	// 1. 정상적인 요청 (Host 헤더 포함)
 	std::string valid_request =
@@ -76,6 +116,9 @@ int main() {
 		"1\r\n"
 		"1\r\n";
 	test_request(invalid_request_no_content_length);
+
+	// 5. Serializer 테스트
+	test_serializer();
 
 	return 0;
 }

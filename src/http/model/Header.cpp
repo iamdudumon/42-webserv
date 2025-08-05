@@ -28,3 +28,7 @@ const std::string& Header::get(std::string key) const {
 void Header::set(std::string key, std::string value) {
 	_headers[to_lower(key)] = value;
 }
+
+const std::map<std::string, std::string>& Header::getHeaders() const {
+	return _headers;
+}

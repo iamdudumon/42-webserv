@@ -1,6 +1,9 @@
+#!/bin/bash
+
 c++ -Wall -Wextra -Werror -std=c++98 \
 	test.cpp \
 	parser/HttpParser.cpp \
+	serializer/HttpSerializer.cpp \
 	parser/state/PacketLineState.cpp \
 	parser/state/HeaderState.cpp \
 	parser/state/BodyState.cpp \
@@ -9,4 +12,4 @@ c++ -Wall -Wextra -Werror -std=c++98 \
 	model/Header.cpp \
 	model/Body.cpp \
 	../utils/str_utils.cpp \
-	-Iinclude -o http_parser_test
+	-I../../include -o http_test && ./http_test
