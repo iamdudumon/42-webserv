@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "../../types/HttpEnums.hpp"
+
 class HttpParseException : public std::exception {
 	private:
 		std::string				_message;
