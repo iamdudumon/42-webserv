@@ -2,7 +2,6 @@
 #ifndef BODYSTATE_HPP
 #define BODYSTATE_HPP
 
-#include <algorithm>
 #include <string>
 
 #include "../HttpParser.hpp"
