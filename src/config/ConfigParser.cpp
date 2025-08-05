@@ -3,12 +3,10 @@
 bool ConfigParser::validateArgument(int ac) {
 	if (ac > 2)
 		throw ConfigException("[Error] Invalid Argument");
-	else if (ac == 2)
-		return true;
-	return false;
+	return true;
 }
 
-std::string ConfigParser::readFromFile(char* filePath) {
+std::string ConfigParser::readFromFile(const char* filePath) {
 	std::ifstream configFile(filePath);
 	if (!configFile.is_open())
 		throw ConfigException("[Error] File open failed: " +
@@ -18,7 +16,7 @@ std::string ConfigParser::readFromFile(char* filePath) {
 	return oss.str();
 }
 
-std::vector<std::string> ConfigParser::tokenize(std::string& readFile) {
+std::vector<std::string> ConfigParser::tokenize(const std::string& readFile) {
 	std::string				 token;
 	std::vector<std::string> tokens;
 
@@ -54,7 +52,7 @@ bool ConfigParser::expectToken(const std::vector<std::string>& tokens,
 }
 
 void ConfigParser::parseListen(const std::vector<std::string>& tokens,
-							   Config& Config, unsigned long& i) {
+							   Config& config, unsigned long& i) {
 	char* end = NULL;
 	long  port = std::strtol(tokens.at(i).c_str(), &end, 10);
 	if (*end != 0)
@@ -62,65 +60,78 @@ void ConfigParser::parseListen(const std::vector<std::string>& tokens,
 							  tokens.at(i) + "'");
 	else if (port < 0 || 65535 < port)
 		throw ConfigException("[emerg] Invalid configuration: port range");
-	Config.setListen(port);
+	config.setListen(port);
+	expectToken(tokens, ++i, ";");
+}
+
+void ConfigParser::parseAutoIndex(const std::vector<std::string>& tokens,
+								  Config& config, unsigned long& i) {
+	std::string status = tokens.at(i);
+	if (status == "on")
+		config.setAutoIndex(true);
+	else if (status == "off")
+		config.setAutoIndex(false);
+	else
+		throw ConfigException(
+			"[emerg] Invalid configuration: autoindex value '" + status + "'");
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseServerName(const std::vector<std::string>& tokens,
-								   Config& Config, unsigned long& i) {
-	Config.setServerName(tokens.at(i));
+								   Config& config, unsigned long& i) {
+	config.setServerName(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseIndex(const std::vector<std::string>& tokens,
-							  Config& Config, unsigned long& i) {
-	Config.setIndex(tokens.at(i));
+							  Config& config, unsigned long& i) {
+	config.setIndex(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseRoot(const std::vector<std::string>& tokens,
-							 Config& Config, unsigned long& i) {
-	Config.setRoot(tokens.at(i));
+							 Config& config, unsigned long& i) {
+	config.setRoot(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseLocationRoot(const std::vector<std::string>& tokens,
-									 Config& Config, const std::string& url,
+									 Config& config, const std::string& url,
 									 unsigned long& i) {
-	Config.setLocationRoot(url, tokens.at(i));
+	config.setLocationRoot(url, tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseLocationIndex(const std::vector<std::string>& tokens,
-									  Config& Config, const std::string& url,
+									  Config& config, const std::string& url,
 									  unsigned long& i) {
-	Config.setLocationIndex(url, tokens.at(i));
+	config.setLocationIndex(url, tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
-void ConfigParser::parseLocationAllowMethod(
-	const std::vector<std::string>& tokens, Config& Config,
+void ConfigParser::parseLocationAllowMethods(
+	const std::vector<std::string>& tokens, Config& config,
 	const std::string& url, unsigned long& i) {
 	std::vector<std::string> tmpMethods;
 	while (tokens.at(i) != ";") {
 		tmpMethods.push_back(tokens[i++]);
 	}
-	Config.setLocationAllowMethods(url, tmpMethods);
+	config.setLocationAllowMethods(url, tmpMethods);
 	expectToken(tokens, i, ";");
 }
 
 void ConfigParser::parseLocation(const std::vector<std::string>& tokens,
-								 Config& Config, unsigned long& i) {
+								 Config& config, unsigned long& i) {
 	std::string url = tokens.at(i);
-	Config.initLocation(url);
+	config.initLocation(url);
 	expectToken(tokens, ++i, "{");
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "root")
-			parseLocationRoot(tokens, Config, url, ++i);
+			parseLocationRoot(tokens, config, url, ++i);
 		else if (tokens.at(i) == "index")
-			parseLocationIndex(tokens, Config, url, ++i);
-		else if (tokens.at(i) == "allow_method")
-			parseLocationAllowMethod(tokens, Config, url, ++i);
+			parseLocationIndex(tokens, config, url, ++i);
+		else if (tokens.at(i) == "allow_methods")
+			parseLocationAllowMethods(tokens, config, url, ++i);
 		else
 			throw ConfigException(
 				"[emerg] Invalid configuration: Unknown directive " +
@@ -131,27 +142,29 @@ void ConfigParser::parseLocation(const std::vector<std::string>& tokens,
 
 Config ConfigParser::parseServer(const std::vector<std::string>& tokens,
 								 unsigned long&					 i) {
-	Config Config;
+	Config config;
 	expectToken(tokens, i, "server");
 	expectToken(tokens, ++i, "{");
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "listen")
-			parseListen(tokens, Config, ++i);
+			parseListen(tokens, config, ++i);
+		else if (tokens.at(i) == "autoindex")
+			parseAutoIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "server_name")
-			parseServerName(tokens, Config, ++i);
+			parseServerName(tokens, config, ++i);
 		else if (tokens.at(i) == "index")
-			parseIndex(tokens, Config, ++i);
+			parseIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "root")
-			parseRoot(tokens, Config, ++i);
+			parseRoot(tokens, config, ++i);
 		else if (tokens.at(i) == "location")
-			parseLocation(tokens, Config, ++i);
+			parseLocation(tokens, config, ++i);
 		else
 			throw ConfigException(
 				"[emerg] Invalid configuration: Unknown directive " +
 				tokens.at(i));
 	}
 	expectToken(tokens, i, "}");
-	return Config;
+	return config;
 }
 
 void ConfigParser::parse(const std::vector<std::string>& tokens) {
@@ -168,8 +181,8 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 	}
 }
 
-void ConfigParser::loadFromFile(char* filePath) {
-	std::string readFile = readFromFile(filePath);
+void ConfigParser::loadFromFile(const char* filePath) {
+	const std::string readFile = readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH);
 	parse(tokenize(readFile));
 	for (unsigned long i = 0; i < _configs.size(); i++) {
 		ConfigValidator::validate(_configs[i]);
