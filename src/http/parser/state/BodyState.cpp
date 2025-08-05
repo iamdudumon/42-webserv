@@ -1,6 +1,8 @@
 // BodyState.cpp
 #include "BodyState.hpp"
 
+#include <algorithm>
+
 void BodyState::parse(HttpParser* parser, const std::string& line) {
 	if (_remain == 0) {
 		_done = true;
