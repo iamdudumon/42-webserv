@@ -21,24 +21,21 @@ void HttpParser::changeState(ParseState* newState) {
 }
 
 void HttpParser::parse() {
-	const char* start = _rawData.c_str();
-	const char* end = start + _rawData.length();
-	const char* crlf;
+	size_t offset = 0;
+	size_t next;
 
-	while ((crlf = std::search(start, end, "\r\n", "\r\n" + 2)) != end) {
-		std::string line(start, crlf);
-
+	while ((next = _rawData.find("\r\n", offset)) != std::string::npos) {
+		std::string line = _rawData.substr(offset, next - offset);
 		_currentState->parse(this, line);
 		_currentState->handleNextState(this);
 
 		if (dynamic_cast<DoneState*>(_currentState)) {
-			if (!std::string(crlf + 2, end).empty())
+			if (next + 2 < _rawData.size())
 				throw HttpParseException("Invalid Content-Length header value",
 										 HTTP::StatusCode::BadRequest);
 			return;
 		}
-
-		start = crlf + 2;
+		offset = next + 2;
 	}
 
 	if (!dynamic_cast<DoneState*>(_currentState))
