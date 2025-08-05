@@ -14,21 +14,11 @@ void Server::initAddress() {
 	std::fill(_serverAddress.sin_zero, _serverAddress.sin_zero + 8, 0);
 }
 
-int Server::validateFunction(int returnValue, std::string type) {
-	if (returnValue < 0) throw ServerException(type);
-	return returnValue;
-}
-
 void Server::initServer() {
-	_serverSocket = validateFunction(
-		socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0), "socket");
-	validateFunction(setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR,
-								&_socketOption, sizeof(_socketOption)),
-					 "socket option");
-	validateFunction(bind(_serverSocket, (struct sockaddr*) &_serverAddress,
-						  sizeof(_serverAddress)),
-					 "bind");
-	validateFunction(listen(_serverSocket, 10), "listen");
+	_serverSocket = SocketWrapper::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	SocketWrapper::setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &_socketOption, sizeof(_socketOption));
+	SocketWrapper::bind(_serverSocket, (struct sockaddr*) &_serverAddress, sizeof(_serverAddress));
+	SocketWrapper::listen(_serverSocket, 10);
 	_epollManager.initEpoll(_serverSocket);
 }
 
@@ -50,23 +40,18 @@ void Server::loopServer() {
 void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.getEventCount(); i++) {
 		if (_epollManager.getEpollEventsAt(i).data.fd == _serverSocket) {
-			_clientSocket = validateFunction(
-				validateFunction(
-					accept(_serverSocket, (struct sockaddr*) &_clientAddress,
-						   (socklen_t*) &_addressSize),
-					"accept"),
-				"accept");
+			_clientSocket = SocketWrapper::accept(_serverSocket, (struct sockaddr*) &_clientAddress, (socklen_t*) &_addressSize);
 			std::cout << "new client :" << _clientSocket << std::endl;
 			_epollManager.addEpollFd(_clientSocket);
 		} else {
-			HttpRequest httpRequest =
+			HttpPacket httpRequest =
 				readHttpPacket(_epollManager.getEpollEventsAt(i).data.fd);
 			if (_epollManager.getEpollEventsAt(i).events &
 				(EPOLLRDHUP | EPOLLHUP | EPOLLERR))
 				_epollManager.deleteEpollFd(
 					_epollManager.getEpollEventsAt(i).data.fd);
 			else {
-				HttpResponse httpResponse("test", "test", 200);
+				HttpPacket httpResponse("test", "test", 200);
 				writeHttpPacket(_epollManager.getEpollEventsAt(i).data.fd,
 								httpResponse);
 			}
@@ -88,13 +73,14 @@ std::string Server::readSocket(int socketFd) {
 	return request;
 }
 
-void Server::writeHttpPacket(int socketFd, HttpResponse httpResponse) {
+void Server::writeHttpPacket(int socketFd, HttpPacket httpResponse) {
 	writeSocket(socketFd, httpResponse.getRawData());
 }
 
-HttpRequest Server::readHttpPacket(int socketFd) {
-	HttpRequest httpRequest =
-		HttpParser::parseRequestHttp(readSocket(socketFd));
+HttpPacket Server::readHttpPacket(int socketFd) {
+	HttpParser httpParser(readSocket(socketFd));
+	httpParser.parse();
+	HttpPacket httpRequest = httpParser.getResult();
 	return httpRequest;
 }
 

@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-#include "exception/ConfigException.hpp"
+#include "../exception/ConfigException.hpp"
 
 struct ConfigLocation {
 		std::string				 _root;

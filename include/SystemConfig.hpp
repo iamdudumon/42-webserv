@@ -5,8 +5,8 @@
 
 namespace SystemConfig {
 	namespace Size {
-			static const std::size_t EPOLL_SIZE = 64;
-			static const std::size_t BUFFER_SIZE = 30000;
+			static const int EPOLL_SIZE = 64;
+			static const int BUFFER_SIZE = 30000;
 	}
 }
 
