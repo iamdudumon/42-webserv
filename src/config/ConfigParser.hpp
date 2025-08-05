@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 
+#include "types/ConfFile.hpp";
 #include "ConfigValidator.hpp"
 #include "exception/ConfigException.hpp"
 #include "model/Config.hpp"
@@ -16,8 +17,8 @@ class ConfigParser {
 	private:
 		std::vector<Config> _configs;
 
-		std::string				 readFromFile(char*);
-		std::vector<std::string> tokenize(std::string&);
+		std::string				 readFromFile(const char*);
+		std::vector<std::string> tokenize(const std::string&);
 		bool expectToken(const std::vector<std::string>&, unsigned long,
 						 const std::string&) const;
 		void parseAutoIndex(const std::vector<std::string>&, Config&,
@@ -46,7 +47,7 @@ class ConfigParser {
 		~ConfigParser() { }
 
 		bool					   validateArgument(int);
-		void					   loadFromFile(char*);
+		void					   loadFromFile(const char*);
 		const std::vector<Config>& getConfigs();
 };
 

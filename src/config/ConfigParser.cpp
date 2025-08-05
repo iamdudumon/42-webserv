@@ -1,14 +1,12 @@
 #include "ConfigParser.hpp"
 
 bool ConfigParser::validateArgument(int ac) {
-	if (ac == 2)
-		return true;
-	else
+	if (ac > 2)
 		throw ConfigException("[Error] Invalid Argument");
-	return false;
+	return true;
 }
 
-std::string ConfigParser::readFromFile(char* filePath) {
+std::string ConfigParser::readFromFile(const char* filePath) {
 	std::ifstream configFile(filePath);
 	if (!configFile.is_open())
 		throw ConfigException("[Error] File open failed: " +
@@ -18,7 +16,7 @@ std::string ConfigParser::readFromFile(char* filePath) {
 	return oss.str();
 }
 
-std::vector<std::string> ConfigParser::tokenize(std::string& readFile) {
+std::vector<std::string> ConfigParser::tokenize(const std::string& readFile) {
 	std::string				 token;
 	std::vector<std::string> tokens;
 
@@ -54,7 +52,7 @@ bool ConfigParser::expectToken(const std::vector<std::string>& tokens,
 }
 
 void ConfigParser::parseListen(const std::vector<std::string>& tokens,
-							   Config& Config, unsigned long& i) {
+							   Config& config, unsigned long& i) {
 	char* end = NULL;
 	long  port = std::strtol(tokens.at(i).c_str(), &end, 10);
 	if (*end != 0)
@@ -62,17 +60,17 @@ void ConfigParser::parseListen(const std::vector<std::string>& tokens,
 							  tokens.at(i) + "'");
 	else if (port < 0 || 65535 < port)
 		throw ConfigException("[emerg] Invalid configuration: port range");
-	Config.setListen(port);
+	config.setListen(port);
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseAutoIndex(const std::vector<std::string>& tokens,
-								  Config& Config, unsigned long& i) {
+								  Config& config, unsigned long& i) {
 	std::string status = tokens.at(i);
 	if (status == "on")
-		Config.setAutoIndex(true);
+		config.setAutoIndex(true);
 	else if (status == "off")
-		Config.setAutoIndex(false);
+		config.setAutoIndex(false);
 	else
 		throw ConfigException(
 			"[emerg] Invalid configuration: autoindex value '" + status + "'");
@@ -183,8 +181,8 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 	}
 }
 
-void ConfigParser::loadFromFile(char* filePath) {
-	std::string readFile = readFromFile(filePath);
+void ConfigParser::loadFromFile(const char* filePath) {
+	const std::string readFile = readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH);
 	parse(tokenize(readFile));
 	for (unsigned long i = 0; i < _configs.size(); i++) {
 		ConfigValidator::validate(_configs[i]);
