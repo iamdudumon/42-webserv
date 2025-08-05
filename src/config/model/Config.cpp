@@ -28,7 +28,7 @@ const std::map<std::string, ConfigLocation>& Config::getLocation() const {
 	return _location;
 }
 
-void Config::setAutoIndex(bool status) { _auto_index = status; }
+void Config::setAutoIndex(bool auto_index) { _auto_index = auto_index; }
 
 void Config::setListen(int listen) { _listen = listen; }
 

@@ -80,60 +80,60 @@ void ConfigParser::parseAutoIndex(const std::vector<std::string>& tokens,
 }
 
 void ConfigParser::parseServerName(const std::vector<std::string>& tokens,
-								   Config& Config, unsigned long& i) {
-	Config.setServerName(tokens.at(i));
+								   Config& config, unsigned long& i) {
+	config.setServerName(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseIndex(const std::vector<std::string>& tokens,
-							  Config& Config, unsigned long& i) {
-	Config.setIndex(tokens.at(i));
+							  Config& config, unsigned long& i) {
+	config.setIndex(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseRoot(const std::vector<std::string>& tokens,
-							 Config& Config, unsigned long& i) {
-	Config.setRoot(tokens.at(i));
+							 Config& config, unsigned long& i) {
+	config.setRoot(tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseLocationRoot(const std::vector<std::string>& tokens,
-									 Config& Config, const std::string& url,
+									 Config& config, const std::string& url,
 									 unsigned long& i) {
-	Config.setLocationRoot(url, tokens.at(i));
+	config.setLocationRoot(url, tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseLocationIndex(const std::vector<std::string>& tokens,
-									  Config& Config, const std::string& url,
+									  Config& config, const std::string& url,
 									  unsigned long& i) {
-	Config.setLocationIndex(url, tokens.at(i));
+	config.setLocationIndex(url, tokens.at(i));
 	expectToken(tokens, ++i, ";");
 }
 
 void ConfigParser::parseLocationAllowMethods(
-	const std::vector<std::string>& tokens, Config& Config,
+	const std::vector<std::string>& tokens, Config& config,
 	const std::string& url, unsigned long& i) {
 	std::vector<std::string> tmpMethods;
 	while (tokens.at(i) != ";") {
 		tmpMethods.push_back(tokens[i++]);
 	}
-	Config.setLocationAllowMethods(url, tmpMethods);
+	config.setLocationAllowMethods(url, tmpMethods);
 	expectToken(tokens, i, ";");
 }
 
 void ConfigParser::parseLocation(const std::vector<std::string>& tokens,
-								 Config& Config, unsigned long& i) {
+								 Config& config, unsigned long& i) {
 	std::string url = tokens.at(i);
-	Config.initLocation(url);
+	config.initLocation(url);
 	expectToken(tokens, ++i, "{");
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "root")
-			parseLocationRoot(tokens, Config, url, ++i);
+			parseLocationRoot(tokens, config, url, ++i);
 		else if (tokens.at(i) == "index")
-			parseLocationIndex(tokens, Config, url, ++i);
+			parseLocationIndex(tokens, config, url, ++i);
 		else if (tokens.at(i) == "allow_methods")
-			parseLocationAllowMethods(tokens, Config, url, ++i);
+			parseLocationAllowMethods(tokens, config, url, ++i);
 		else
 			throw ConfigException(
 				"[emerg] Invalid configuration: Unknown directive " +
@@ -144,29 +144,29 @@ void ConfigParser::parseLocation(const std::vector<std::string>& tokens,
 
 Config ConfigParser::parseServer(const std::vector<std::string>& tokens,
 								 unsigned long&					 i) {
-	Config Config;
+	Config config;
 	expectToken(tokens, i, "server");
 	expectToken(tokens, ++i, "{");
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "listen")
-			parseListen(tokens, Config, ++i);
+			parseListen(tokens, config, ++i);
 		else if (tokens.at(i) == "autoindex")
-			parseAutoIndex(tokens, Config, ++i);
+			parseAutoIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "server_name")
-			parseServerName(tokens, Config, ++i);
+			parseServerName(tokens, config, ++i);
 		else if (tokens.at(i) == "index")
-			parseIndex(tokens, Config, ++i);
+			parseIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "root")
-			parseRoot(tokens, Config, ++i);
+			parseRoot(tokens, config, ++i);
 		else if (tokens.at(i) == "location")
-			parseLocation(tokens, Config, ++i);
+			parseLocation(tokens, config, ++i);
 		else
 			throw ConfigException(
 				"[emerg] Invalid configuration: Unknown directive " +
 				tokens.at(i));
 	}
 	expectToken(tokens, i, "}");
-	return Config;
+	return config;
 }
 
 void ConfigParser::parse(const std::vector<std::string>& tokens) {
