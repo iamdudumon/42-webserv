@@ -3,6 +3,8 @@
 
 #include <sstream>
 
+#include "exception/HttpParseException.hpp"
+
 HttpParser::HttpParser(const std::string& rawData)
 	: _currentState(new PacketLineState()), _rawData(rawData), _packet(NULL) {}
 
@@ -19,22 +21,26 @@ void HttpParser::changeState(ParseState* newState) {
 }
 
 void HttpParser::parse() {
-	std::istringstream stream(_rawData);
-	std::string		   line;
+	size_t offset = 0;
+	size_t next;
 
-	// 패킷 라인과 헤더를 우선 파싱
-	while (std::getline(stream, line)) {
-		if (!line.empty() && line[line.size() - 1] == '\r')
-			line.erase(line.size() - 1);
-
+	while ((next = _rawData.find("\r\n", offset)) != std::string::npos) {
+		std::string line = _rawData.substr(offset, next - offset);
 		_currentState->parse(this, line);
 		_currentState->handleNextState(this);
 
-		if (dynamic_cast<DoneState*>(_currentState)) break;
+		if (dynamic_cast<DoneState*>(_currentState)) {
+			if (next + 2 < _rawData.size())
+				throw HttpParseException("Invalid Content-Length header value",
+										 HTTP::StatusCode::BadRequest);
+			return;
+		}
+		offset = next + 2;
 	}
 
-	// 파싱 종료 후 DoneState에서도 한 번 호출돼 결과 설정
-	_currentState->parse(this, std::string());
+	if (!dynamic_cast<DoneState*>(_currentState))
+		throw HttpParseException("Malformed request: Invalid line ending",
+								 HTTP::StatusCode::BadRequest);
 }
 
 HttpPacket HttpParser::getResult() { return *_packet; }
