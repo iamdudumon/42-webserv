@@ -19,6 +19,10 @@ Header& Header::operator=(const Header& copy) {
 	return (*this);
 }
 
+const std::map<std::string, std::string>& Header::getHeaders() const {
+	return _headers;
+}
+
 const std::string& Header::get(std::string key) const {
 	std::map<std::string, std::string>::const_iterator it =
 		_headers.find(to_lower(key));

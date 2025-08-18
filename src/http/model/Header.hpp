@@ -15,6 +15,8 @@ class Header {
 		Header(const Header&);
 		Header& operator=(const Header&);
 
+		const std::map<std::string, std::string>& getHeaders() const;
+
 		const std::string& get(std::string) const;
 		void			   set(std::string, std::string);
 };

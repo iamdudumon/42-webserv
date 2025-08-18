@@ -24,14 +24,17 @@ void HeaderState::parse(HttpParser* parser, const std::string& line) {
 
 void HeaderState::handleNextState(HttpParser* parser) {
 	if (!_done) return;
-
 	if (parser->_packet->getHeader().get("host").empty())
 		throw HttpParseException("Host header is missing",
 								 HTTP::StatusCode::BadRequest);
 
 	std::string lentghStr = parser->_packet->getHeader().get("Content-Length");
 	size_t		contentLength = lentghStr != "" ? str_toint(lentghStr) : 0;
+	HTTP::ContentType::Value contentType = HTTP::ContentType::to_value(
+		parser->_packet->getHeader().get("Content-Type"));
 
+	parser->_packet->applyBodyLength(contentLength);
+	parser->_packet->applyBodyType(contentType);
 	if (contentLength == 0)
 		parser->changeState(new DoneState());
 	else
