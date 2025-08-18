@@ -20,7 +20,11 @@ const std::vector<unsigned char>& Body::getData() const {
 
 HTTP::ContentType::Value Body::getType() const { return _type; }
 
+size_t Body::getLength() const { return _length; }
+
 void Body::setType(HTTP::ContentType::Value type) { this->_type = type; }
+
+void Body::setLength(size_t length) { this->_length = length; }
 
 void Body::append(const char* data, size_t len) {
 	_data.insert(_data.end(), reinterpret_cast<const unsigned char*>(data),
