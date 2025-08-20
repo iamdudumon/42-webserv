@@ -1,5 +1,4 @@
 // Body.hpp
-#pragma once
 #ifndef BODY_HPP
 #define BODY_HPP
 
@@ -11,6 +10,7 @@ class Body {
 	private:
 		std::vector<unsigned char> _data;
 		HTTP::ContentType::Value   _type;
+		size_t					   _length;
 
 	public:
 		Body();
@@ -20,9 +20,12 @@ class Body {
 
 		const std::vector<unsigned char>& getData() const;
 		HTTP::ContentType::Value		  getType() const;
+		size_t							  getLength() const;
+
+		void setType(HTTP::ContentType::Value);
+		void setLength(size_t);
 
 		void append(const char*, size_t);
-		void setType(HTTP::ContentType::Value);
 };
 
 #endif

@@ -29,6 +29,8 @@ class HttpPacket {
 
 		void addHeader(const std::string&, const std::string&);
 		void appendBody(const char*, size_t);
+		void applyBodyLength(size_t);
+		void applyBodyType(HTTP::ContentType::Value);
 };
 
 #endif
