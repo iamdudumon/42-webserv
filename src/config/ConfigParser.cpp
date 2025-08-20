@@ -1,8 +1,7 @@
 #include "ConfigParser.hpp"
 
 bool ConfigParser::validateArgument(int ac) {
-	if (ac > 2)
-		throw ConfigException("[Error] Invalid Argument");
+	if (ac > 2) throw ConfigException("[Error] Invalid Argument");
 	return true;
 }
 
@@ -182,7 +181,8 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 }
 
 void ConfigParser::loadFromFile(const char* filePath) {
-	const std::string readFile = readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH);
+	const std::string readFile =
+		readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH());
 	parse(tokenize(readFile));
 	for (unsigned long i = 0; i < _configs.size(); i++) {
 		ConfigValidator::validate(_configs[i]);

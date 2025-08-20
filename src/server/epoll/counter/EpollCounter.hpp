@@ -1,13 +1,11 @@
 //EpollCounter.hpp
-#pragma once
 #ifndef EPOLLCOUNTER_HPP
 #define EPOLLCOUNTER_HPP
 
 #include <algorithm>
 #include <vector>
 
-#include "../manager/EpollManager.hpp"
-#include "../../include/SystemConfig.hpp"
+#include "../../../../include/SystemConfig.hpp"
 
 class EpollCounter {
 	private:

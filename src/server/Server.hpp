@@ -1,5 +1,4 @@
-//Server.hpp
-#pragma once
+// Server.hpp
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
@@ -14,13 +13,14 @@
 #include <string>
 #include <vector>
 
-#include "../../include/Config.hpp"
-#include "manager/EpollManager.hpp"
-#include "../../include/ConfigParser.hpp"
 #include "../../include/SystemConfig.hpp"
+#include "../config/model/Config.hpp"
+#include "../http/model/HttpPacket.hpp"
+#include "../http/parser/HttpParser.hpp"
+#include "../http/serializer/HttpSerializer.hpp"
+#include "epoll/manager/EpollManager.hpp"
 #include "exception/ServerException.hpp"
-#include "../http/model/HttpRequest.hpp"
-#include "../http/model/HttpResponse.hpp"
+#include "wrapper/SocketWrapper.hpp"
 
 class Server {
 	private:
@@ -36,12 +36,11 @@ class Server {
 		void		initAddress();
 		void		initServer();
 		void		loopServer();
-		void		writeHttpPacket(int, HttpResponse);
+		void		writeHttpPacket(int, HttpPacket);
 		void		handleEvents();
 		void		writeSocket(int, std::string);
-		int			validateFunction(int, std::string);
 		std::string readSocket(int);
-		HttpRequest readHttpPacket(int);
+		HttpPacket	convertHttpPacket(std::string&);
 
 	public:
 		Server(Config config);

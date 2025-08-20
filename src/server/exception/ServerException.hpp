@@ -1,5 +1,4 @@
-//ServerException.hpp
-#pragma once
+// ServerException.hpp
 #ifndef SERVEREXCEPTION_HPP
 #define SERVEREXCEPTION_HPP
 

@@ -1,17 +1,16 @@
-//EpollManager.hpp
-#pragma once
+// EpollManager.hpp
 #ifndef EPOLLMANAGER_HPP
 #define EPOLLMANAGER_HPP
 
 #include <sys/epoll.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <vector>
 
+#include "../../../../include/SystemConfig.hpp"
 #include "../counter/EpollCounter.hpp"
 #include "../exception/EpollException.hpp"
-#include "../../Server.hpp"
-#include "../../../include/SystemConfig.hpp"
 
 class EpollManager {
 	private:
