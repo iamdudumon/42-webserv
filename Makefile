@@ -3,7 +3,7 @@ CXX = c++
 CPPFLAGS = -Wall -Wextra -Werror
 STD = -std=c++98
 
-SRCDIR = SRCDIR
+SRCDIR = src
 INCDIR = include
 OBJDIR = obj
 

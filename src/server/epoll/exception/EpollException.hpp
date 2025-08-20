@@ -1,5 +1,4 @@
-//EpollException.hpp
-#pragma once
+// EpollException.hpp
 #ifndef EPOLLEXCEPTION_HPP
 #define EPOLLEXCEPTION_HPP
 

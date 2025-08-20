@@ -1,4 +1,4 @@
-//Server.hpp
+// Server.hpp
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
@@ -13,15 +13,14 @@
 #include <string>
 #include <vector>
 
-#include "../config/model/Config.hpp"
-#include "epoll/manager/EpollManager.hpp"
-#include "../config/ConfigParser.hpp"
 #include "../../include/SystemConfig.hpp"
-#include "exception/ServerException.hpp"
+#include "../config/model/Config.hpp"
 #include "../http/model/HttpPacket.hpp"
 #include "../http/parser/HttpParser.hpp"
-#include "wrapper/SocketWrapper.hpp"
 #include "../http/serializer/HttpSerializer.hpp"
+#include "epoll/manager/EpollManager.hpp"
+#include "exception/ServerException.hpp"
+#include "wrapper/SocketWrapper.hpp"
 
 class Server {
 	private:
@@ -41,7 +40,7 @@ class Server {
 		void		handleEvents();
 		void		writeSocket(int, std::string);
 		std::string readSocket(int);
-		HttpPacket readHttpPacket(int);
+		HttpPacket	convertHttpPacket(std::string&);
 
 	public:
 		Server(Config config);

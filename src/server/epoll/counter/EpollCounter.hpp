@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "../manager/EpollManager.hpp"
 #include "../../../../include/SystemConfig.hpp"
 
 class EpollCounter {

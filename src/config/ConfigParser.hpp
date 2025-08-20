@@ -8,10 +8,10 @@
 #include <sstream>
 #include <string>
 
-#include "types/ConfFile.hpp";
 #include "ConfigValidator.hpp"
 #include "exception/ConfigException.hpp"
 #include "model/Config.hpp"
+#include "types/ConfFile.hpp"
 
 class ConfigParser {
 	private:
@@ -43,8 +43,8 @@ class ConfigParser {
 		void   parse(const std::vector<std::string>&);
 
 	public:
-		ConfigParser() { }
-		~ConfigParser() { }
+		ConfigParser() {}
+		~ConfigParser() {}
 
 		bool					   validateArgument(int);
 		void					   loadFromFile(const char*);
