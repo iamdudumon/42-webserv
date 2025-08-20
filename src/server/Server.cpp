@@ -51,7 +51,12 @@ void Server::handleEvents() {
 				_epollManager.deleteEpollFd(
 					_epollManager.getEpollEventsAt(i).data.fd);
 			else {
-				HttpPacket httpResponse("test", "test", 200);
+				HTTP::StatusLine statusLine = { "HTTP/1.1", HTTP::StatusCode::OK, HTTP::StatusCode::to_reasonPhrase(HTTP::StatusCode::OK)};
+				HttpPacket httpResponse(statusLine, Header(), Body());
+				httpResponse.addHeader("Content-Type", "text/plain");
+				httpResponse.addHeader("Content-Length", "13");
+				httpResponse.appendBody("Hello, World!", 13);
+
 				writeHttpPacket(_epollManager.getEpollEventsAt(i).data.fd,
 								httpResponse);
 			}
@@ -74,7 +79,7 @@ std::string Server::readSocket(int socketFd) {
 }
 
 void Server::writeHttpPacket(int socketFd, HttpPacket httpResponse) {
-	writeSocket(socketFd, httpResponse.getRawData());
+	writeSocket(socketFd, HttpSerializer::serialize(httpResponse));
 }
 
 HttpPacket Server::readHttpPacket(int socketFd) {

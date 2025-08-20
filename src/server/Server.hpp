@@ -21,6 +21,7 @@
 #include "../http/model/HttpPacket.hpp"
 #include "../http/parser/HttpParser.hpp"
 #include "wrapper/SocketWrapper.hpp"
+#include "../http/serializer/HttpSerializer.hpp"
 
 class Server {
 	private:
