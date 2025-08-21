@@ -25,7 +25,7 @@ class EpollManager {
 		int						  getEpollFd() const;
 		int						  getEventCount() const;
 		const struct epoll_event& getEpollEventsAt(int) const;
-		void					  initEpoll(int);
+		void					  initEpoll();
 		void					  addEpollFd(int);
 		void					  deleteEpollFd(int);
 		void					  waitEvent();

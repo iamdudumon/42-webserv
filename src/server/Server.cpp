@@ -1,28 +1,29 @@
 #include "Server.hpp"
 
-Server::Server(Config config)
-	: _PORT(config.getListen()),
+Server::Server(std::vector<Config> configs)
+	: _configs(configs),
 	  _socketOption(1),
 	  _addressSize(sizeof(_serverAddress)) {
-	initAddress();
+	_epollManager.initEpoll();
 }
 
-void Server::initAddress() {
+void Server::initAddress(int index) {
 	_serverAddress.sin_family = AF_INET;
-	_serverAddress.sin_port = htons(_PORT);
+	_serverAddress.sin_port = htons(_configs[index].getListen());
 	_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	std::fill(_serverAddress.sin_zero, _serverAddress.sin_zero + 8, 0);
 }
 
 void Server::initServer() {
-	_serverSocket =
+	int serverSocket =
 		SocketWrapper::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-	SocketWrapper::setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR,
+	SocketWrapper::setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR,
 							  &_socketOption, sizeof(_socketOption));
-	SocketWrapper::bind(_serverSocket, (struct sockaddr*) &_serverAddress,
+	SocketWrapper::bind(serverSocket, (struct sockaddr*) &_serverAddress,
 						sizeof(_serverAddress));
-	SocketWrapper::listen(_serverSocket, 10);
-	_epollManager.initEpoll(_serverSocket);
+	SocketWrapper::listen(serverSocket, 10);
+	_serverSockets.insert(serverSocket);
+	_epollManager.addEpollFd(serverSocket);
 }
 
 void Server::loopServer() {
@@ -44,10 +45,11 @@ void Server::loopServer() {
 
 void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.getEventCount(); i++) {
-		if (_epollManager.getEpollEventsAt(i).data.fd == _serverSocket) {
+		if (_serverSockets.find(_epollManager.getEpollEventsAt(i).data.fd) !=
+			_serverSockets.end()) {
 			_clientSocket = SocketWrapper::accept(
-				_serverSocket, (struct sockaddr*) &_clientAddress,
-				(socklen_t*) &_addressSize);
+				*_serverSockets.find(_epollManager.getEpollEventsAt(i).data.fd),
+				(struct sockaddr*) &_clientAddress, (socklen_t*) &_addressSize);
 			std::cout << "new client :" << _clientSocket << std::endl;
 			_epollManager.addEpollFd(_clientSocket);
 		} else {
@@ -105,6 +107,9 @@ void Server::writeSocket(int socketFd, std::string rawData) {
 }
 
 void Server::runServer() {
-	initServer();
+	for (unsigned long i = 0; i < _configs.size(); i++) {
+		initAddress(i);
+		initServer();
+	}
 	loopServer();
 }
