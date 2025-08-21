@@ -1,12 +1,13 @@
 #include "Config.hpp"
 
-Config::Config() : _auto_index(false), _listen(-1), _server_name("_"), _index("index.html") {}
+Config::Config() : _auto_index(false), _listen(-1), _client_max_body_size(1024 * 1024), _server_name("_"), _index("index.html") {}
 
 Config::Config(const Config& other) { *this = other; }
 
 Config& Config::operator=(const Config& other) {
 	_auto_index = other._auto_index;
 	_listen = other._listen;
+	_client_max_body_size = other._client_max_body_size;
 	_server_name = other._server_name;
 	_index = other._index;
 	_root = other._root;
@@ -17,6 +18,8 @@ Config& Config::operator=(const Config& other) {
 bool Config::getAutoIndex() const { return _auto_index; }
 
 int Config::getListen() const { return _listen; }
+
+int Config::getClientMaxBodySize() const { return _client_max_body_size; }
 
 const std::string& Config::getServerName() const { return _server_name; }
 
@@ -31,6 +34,10 @@ const std::map<std::string, ConfigLocation>& Config::getLocation() const {
 void Config::setAutoIndex(bool auto_index) { _auto_index = auto_index; }
 
 void Config::setListen(int listen) { _listen = listen; }
+
+void Config::setClientMaxBodySize(int client_max_body_size) {
+	_client_max_body_size = client_max_body_size;
+}
 
 void Config::setServerName(const std::string& serverName) {
 	_server_name = serverName;

@@ -17,6 +17,7 @@ class Config {
 	private:
 		bool								  _auto_index;
 		int									  _listen;
+		int									  _client_max_body_size;
 		std::string							  _server_name;
 		std::string							  _index;
 		std::string							  _root;
@@ -31,6 +32,7 @@ class Config {
 		// getter
 		bool										 getAutoIndex() const;
 		int											 getListen() const;
+		int											 getClientMaxBodySize() const;
 		const std::string&							 getServerName() const;
 		const std::string&							 getIndex() const;
 		const std::string&							 getRoot() const;
@@ -43,6 +45,7 @@ class Config {
 		// setter
 		void setAutoIndex(bool);
 		void setListen(int);
+		void setClientMaxBodySize(int);
 		void setServerName(const std::string&);
 		void setIndex(const std::string&);
 		void setRoot(const std::string&);
