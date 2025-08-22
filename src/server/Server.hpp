@@ -34,7 +34,7 @@ class Server {
 		struct sockaddr_in	_clientAddress;
 		EpollManager		_epollManager;
 
-		void		initAddress(int index);
+		void		initAddress(int);
 		void		initServer();
 		void		loopServer();
 		void		writeHttpPacket(int, HttpPacket);
@@ -44,7 +44,7 @@ class Server {
 		HttpPacket	convertHttpPacket(std::string&);
 
 	public:
-		Server(std::vector<Config> configs);
+		Server(std::vector<Config>);
 
 		void runServer();
 };
