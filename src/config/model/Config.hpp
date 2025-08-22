@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../exception/ConfigException.hpp"
+#include "../types/ConfFile.hpp"
 
 struct ConfigLocation {
 		std::string				 _root;
@@ -17,7 +18,7 @@ class Config {
 	private:
 		bool								  _auto_index;
 		int									  _listen;
-		long long								  _client_max_body_size;
+		long long							  _client_max_body_size;
 		std::string							  _server_name;
 		std::string							  _index;
 		std::string							  _root;
@@ -30,12 +31,12 @@ class Config {
 		~Config() {}
 
 		// getter
-		bool										 getAutoIndex() const;
-		int											 getListen() const;
-		long long									 getClientMaxBodySize() const;
-		const std::string&							 getServerName() const;
-		const std::string&							 getIndex() const;
-		const std::string&							 getRoot() const;
+		bool			   getAutoIndex() const;
+		int				   getListen() const;
+		long long		   getClientMaxBodySize() const;
+		const std::string& getServerName() const;
+		const std::string& getIndex() const;
+		const std::string& getRoot() const;
 		const std::map<std::string, ConfigLocation>& getLocation() const;
 		const std::string& getLocationRoot(const std::string&) const;
 		const std::string& getLocationIndex(const std::string&) const;

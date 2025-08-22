@@ -3,7 +3,7 @@
 Config::Config()
 	: _auto_index(false),
 	  _listen(-1),
-	  _client_max_body_size(1024 * 1024),
+	  _client_max_body_size(ConfFile::DEFAULT_CLIENT_MAX_BODY_SIZE),
 	  _server_name("_"),
 	  _index("index.html") {}
 
