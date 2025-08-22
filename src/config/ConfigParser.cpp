@@ -55,11 +55,37 @@ void ConfigParser::parseListen(const std::vector<std::string>& tokens,
 	char* end = NULL;
 	long  port = std::strtol(tokens.at(i).c_str(), &end, 10);
 	if (*end != 0)
-		throw ConfigException("[emerg] Invalid configuration: Listen '" +
+		throw ConfigException("[emerg] Invalid configuration: listen '" +
 							  tokens.at(i) + "'");
 	else if (port < 0 || 65535 < port)
 		throw ConfigException("[emerg] Invalid configuration: port range");
 	config.setListen(port);
+	expectToken(tokens, ++i, ";");
+}
+
+void ConfigParser::parseClientMaxBodySize(
+	const std::vector<std::string>& tokens, Config& config, unsigned long& i) {
+	char*	  end = NULL;
+	long long size = std::strtoll(tokens.at(i).c_str(), &end, 10);
+
+	std::string unit(end);
+	for (unsigned long i = 0; i < unit.size(); i++) unit[i] = tolower(unit[i]);
+	if (unit == "k" || unit == "kb") {
+		size *= 1024;
+	} else if (unit == "m" || unit == "mb") {
+		size *= 1024 * 1024;
+	} else if (unit == "g" || unit == "gb") {
+		size *= 1024 * 1024 * 1024;
+	} else if (!unit.empty()) {
+		throw ConfigException(
+			"[emerg] Invalid configuration: client_max_body_size '" +
+			tokens.at(i) + "'");
+	}
+	if (size < 0 || ConfFile::LIMIT_CLIENT_MAX_BODY_SIZE < size)
+		throw ConfigException(
+			"[emerg] Invalid configuration: client_max_body_size '" +
+			tokens.at(i) + "'");
+	config.setClientMaxBodySize(size);
 	expectToken(tokens, ++i, ";");
 }
 
@@ -147,6 +173,8 @@ Config ConfigParser::parseServer(const std::vector<std::string>& tokens,
 	while (tokens.at(++i) != "}") {
 		if (tokens.at(i) == "listen")
 			parseListen(tokens, config, ++i);
+		else if (tokens.at(i) == "client_max_body_size")
+			parseClientMaxBodySize(tokens, config, ++i);
 		else if (tokens.at(i) == "autoindex")
 			parseAutoIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "server_name")
