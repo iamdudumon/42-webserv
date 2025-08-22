@@ -81,7 +81,7 @@ void ConfigParser::parseClientMaxBodySize(
 			"[emerg] Invalid configuration: client_max_body_size '" +
 			tokens.at(i) + "'");
 	}
-	if (size < 0 || ConfFile::MAX_BODY_SIZE < size)
+	if (size < 0 || ConfFile::LIMIT_CLIENT_MAX_BODY_SIZE < size)
 		throw ConfigException(
 			"[emerg] Invalid configuration: client_max_body_size '" +
 			tokens.at(i) + "'");

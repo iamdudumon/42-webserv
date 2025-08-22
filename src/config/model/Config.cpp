@@ -4,8 +4,8 @@ Config::Config()
 	: _auto_index(false),
 	  _listen(-1),
 	  _client_max_body_size(ConfFile::DEFAULT_CLIENT_MAX_BODY_SIZE),
-	  _server_name("_"),
-	  _index("index.html") {}
+	  _server_name(ConfFile::DEFAULT_SERVER_NAME()),
+	  _index(ConfFile::DEFAULT_INDEX()) {}
 
 Config::Config(const Config& other) { *this = other; }
 
