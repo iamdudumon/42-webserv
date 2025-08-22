@@ -1,9 +1,8 @@
 #include "EpollManager.hpp"
 
-void EpollManager::initEpoll(int serverSocket) {
+void EpollManager::initEpoll() {
 	_epollFd = epoll_create(EPOLL_SIZE);
 	_epollEvents.resize(EPOLL_SIZE);
-	addEpollFd(serverSocket);
 }
 
 void EpollManager::addEpollFd(int socketFd) {

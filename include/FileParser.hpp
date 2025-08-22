@@ -1,5 +1,4 @@
-//FileParser.hpp
-#pragma once
+// FileParser.hpp
 #ifndef FILEPARSER_HPP
 #define FILEPARSER_HPP
 

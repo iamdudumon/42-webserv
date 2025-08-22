@@ -1,4 +1,4 @@
-//EpollCounter.hpp
+// EpollCounter.hpp
 #ifndef EPOLLCOUNTER_HPP
 #define EPOLLCOUNTER_HPP
 

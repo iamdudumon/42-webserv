@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -24,16 +25,16 @@
 
 class Server {
 	private:
-		const int		   _PORT;
-		int				   _serverSocket;
-		int				   _clientSocket;
-		int				   _socketOption;
-		int				   _addressSize;
-		struct sockaddr_in _serverAddress;
-		struct sockaddr_in _clientAddress;
-		EpollManager	   _epollManager;
+		std::vector<Config> _configs;
+		std::set<int>		_serverSockets;
+		int					_clientSocket;
+		int					_socketOption;
+		int					_addressSize;
+		struct sockaddr_in	_serverAddress;
+		struct sockaddr_in	_clientAddress;
+		EpollManager		_epollManager;
 
-		void		initAddress();
+		void		initAddress(int);
 		void		initServer();
 		void		loopServer();
 		void		writeHttpPacket(int, HttpPacket);
@@ -43,7 +44,7 @@ class Server {
 		HttpPacket	convertHttpPacket(std::string&);
 
 	public:
-		Server(Config config);
+		Server(std::vector<Config>);
 
 		void runServer();
 };
