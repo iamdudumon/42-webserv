@@ -15,7 +15,7 @@ class BodyState : public ParseState {
 		virtual void handleNextState(HttpParser*);
 
 	private:
-		bool   _done;
+		bool _done;
 		size_t _remain;
 };
 

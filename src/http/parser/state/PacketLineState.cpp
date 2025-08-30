@@ -17,8 +17,7 @@ void PacketLineState::parse(HttpParser* parser) {
 		HTTP::StartLine startLine = {HTTP::Method::to_value(t1), t2, rest};
 		parser->_packet = new HttpPacket(startLine, Header(), Body());
 	} else {
-		HTTP::StatusLine statusLine = {t1, HTTP::StatusCode::to_value(t2),
-									   rest};
+		HTTP::StatusLine statusLine = {t1, HTTP::StatusCode::to_value(t2), rest};
 		parser->_packet = new HttpPacket(statusLine, Header(), Body());
 	}
 	_done = true;

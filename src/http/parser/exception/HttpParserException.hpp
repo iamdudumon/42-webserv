@@ -9,18 +9,21 @@
 
 class HttpParserException : public std::exception {
 	private:
-		std::string				_message;
+		std::string _message;
 		HTTP::StatusCode::Value _statusCode;
 
 	public:
-		HttpParserException(const std::string&	   message,
-						   HTTP::StatusCode::Value statusCode)
-			: _message(message), _statusCode(statusCode) {}
+		HttpParserException(const std::string& message, HTTP::StatusCode::Value statusCode) :
+			_message(message), _statusCode(statusCode) {}
 		virtual ~HttpParserException() throw() {}
 
-		virtual const char* what() const throw() { return _message.c_str(); }
+		virtual const char* what() const throw() {
+			return _message.c_str();
+		}
 
-		HTTP::StatusCode::Value getStatusCode() const { return _statusCode; }
+		HTTP::StatusCode::Value getStatusCode() const {
+			return _statusCode;
+		}
 };
 
 #endif

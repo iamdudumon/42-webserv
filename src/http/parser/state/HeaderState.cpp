@@ -15,8 +15,7 @@ void HeaderState::parse(HttpParser* parser) {
 
 		size_t sep = line.find(':');
 		if (sep == std::string::npos || sep == 0)
-			throw HttpParserException("Malformed header line",
-									 HTTP::StatusCode::BadRequest);
+			throw HttpParserException("Malformed header line", HTTP::StatusCode::BadRequest);
 
 		std::string key = line.substr(0, sep);
 		std::string value = line.substr(sep + 1);
@@ -30,15 +29,13 @@ void HeaderState::parse(HttpParser* parser) {
 
 void HeaderState::handleNextState(HttpParser* parser) {
 	if (!_done) return;
-	if (parser->_packet->isRequest() &&
-		parser->_packet->getHeader().get("host").empty())
-		throw HttpParserException("Host header is missing",
-								 HTTP::StatusCode::BadRequest);
+	if (parser->_packet->isRequest() && parser->_packet->getHeader().get("host").empty())
+		throw HttpParserException("Host header is missing", HTTP::StatusCode::BadRequest);
 
 	std::string lengthStr = parser->_packet->getHeader().get("Content-Length");
-	size_t		contentLength = lengthStr != "" ? str_toint(lengthStr) : 0;
-	HTTP::ContentType::Value contentType = HTTP::ContentType::to_value(
-		parser->_packet->getHeader().get("Content-Type"));
+	size_t contentLength = lengthStr != "" ? str_toint(lengthStr) : 0;
+	HTTP::ContentType::Value contentType =
+		HTTP::ContentType::to_value(parser->_packet->getHeader().get("Content-Type"));
 
 	parser->_packet->applyBodyLength(contentLength);
 	parser->_packet->applyBodyType(contentType);

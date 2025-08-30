@@ -7,23 +7,19 @@
 #include "../../utils/str_utils.hpp"
 
 std::string HttpSerializer::serialize(const HttpPacket& packet) {
-	if (packet.isRequest())
-		throw std::logic_error("HttpSerializer: request packet unsupported");
+	if (packet.isRequest()) throw std::logic_error("HttpSerializer: request packet unsupported");
 
-	std::stringstream						  ss;
-	const std::map<std::string, std::string>& headers =
-		packet.getHeader().getHeaders();
+	std::stringstream ss;
+	const std::map<std::string, std::string>& headers = packet.getHeader().getHeaders();
 	const std::vector<unsigned char>& bodyData = packet.getBody().getData();
-	const size_t					  bodyLen = bodyData.size();
-	const HTTP::StatusLine			  statusLine = packet.getStatusLine();
-	bool							  hasServer = false;
-	bool							  hasContentLength = false;
+	const size_t bodyLen = bodyData.size();
+	const HTTP::StatusLine statusLine = packet.getStatusLine();
+	bool hasServer = false;
+	bool hasContentLength = false;
 
-	ss << statusLine.version << " "
-	   << HTTP::StatusCode::to_string(statusLine.statusCode) << " "
+	ss << statusLine.version << " " << HTTP::StatusCode::to_string(statusLine.statusCode) << " "
 	   << statusLine.reasonPhrase << "\r\n";
-	for (std::map<std::string, std::string>::const_iterator it =
-			 headers.begin();
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
 		 it != headers.end(); ++it) {
 		std::string keyLower = to_lower(it->first);
 		if (keyLower == "content-length") {
@@ -34,11 +30,9 @@ std::string HttpSerializer::serialize(const HttpPacket& packet) {
 		ss << it->first << ": " << it->second << "\r\n";
 	}
 	if (!hasServer) ss << "Server: webserv" << "\r\n";
-	if (bodyLen > 0 || hasContentLength)
-		ss << "Content-Length: " << bodyLen << "\r\n";
+	if (bodyLen > 0 || hasContentLength) ss << "Content-Length: " << bodyLen << "\r\n";
 	ss << "\r\n";
-	if (!bodyData.empty())
-		ss.write(reinterpret_cast<const char*>(&bodyData[0]), bodyData.size());
+	if (!bodyData.empty()) ss.write(reinterpret_cast<const char*>(&bodyData[0]), bodyData.size());
 
 	return ss.str();
 }
