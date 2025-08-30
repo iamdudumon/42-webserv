@@ -7,16 +7,16 @@
 
 #include "../../types/HttpEnums.hpp"
 
-class HttpParseException : public std::exception {
+class HttpParserException : public std::exception {
 	private:
 		std::string				_message;
 		HTTP::StatusCode::Value _statusCode;
 
 	public:
-		HttpParseException(const std::string&	   message,
+		HttpParserException(const std::string&	   message,
 						   HTTP::StatusCode::Value statusCode)
 			: _message(message), _statusCode(statusCode) {}
-		virtual ~HttpParseException() throw() {}
+		virtual ~HttpParserException() throw() {}
 
 		virtual const char* what() const throw() { return _message.c_str(); }
 

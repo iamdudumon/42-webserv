@@ -2,7 +2,7 @@
 #include "HeaderState.hpp"
 
 #include "../../../utils/str_utils.hpp"
-#include "../exception/HttpParseException.hpp"
+#include "../exception/HttpParserException.hpp"
 
 void HeaderState::parse(HttpParser* parser) {
 	if (_done) return;
@@ -15,7 +15,7 @@ void HeaderState::parse(HttpParser* parser) {
 
 		size_t sep = line.find(':');
 		if (sep == std::string::npos || sep == 0)
-			throw HttpParseException("Malformed header line",
+			throw HttpParserException("Malformed header line",
 									 HTTP::StatusCode::BadRequest);
 
 		std::string key = line.substr(0, sep);
@@ -32,7 +32,7 @@ void HeaderState::handleNextState(HttpParser* parser) {
 	if (!_done) return;
 	if (parser->_packet->isRequest() &&
 		parser->_packet->getHeader().get("host").empty())
-		throw HttpParseException("Host header is missing",
+		throw HttpParserException("Host header is missing",
 								 HTTP::StatusCode::BadRequest);
 
 	std::string lengthStr = parser->_packet->getHeader().get("Content-Length");
