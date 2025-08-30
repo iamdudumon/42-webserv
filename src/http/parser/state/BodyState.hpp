@@ -11,7 +11,7 @@ class BodyState : public ParseState {
 	public:
 		BodyState(size_t remain) : _done(false), _remain(remain) {}
 
-		virtual void parse(HttpParser*, const std::string&);
+		virtual void parse(HttpParser*);
 		virtual void handleNextState(HttpParser*);
 
 	private:
