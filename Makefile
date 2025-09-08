@@ -17,23 +17,23 @@ INCLUDE_FLAGS = $(addprefix -I, $(INCLUDE_DIRS))
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $@
+	@$(CXX) $(OBJ) -o $@
 	@echo "build success : $(TARGET)"
 
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(INCLUDE_FLAGS) -c $< -o $@
+	@$(CXX) $(CPPFLAGS) $(INCLUDE_FLAGS) -c $< -o $@
 	@echo "compile: $<"
 
 $(OBJDIR):
-	mkdir -p $(OBJDIR)
+	@mkdir -p $(OBJDIR)
 
 clean:
-	rm -rf $(OBJDIR)
+	@rm -rf $(OBJDIR)
 
 fclean: clean
-	rm -f $(TARGET)
+	@rm -f $(TARGET)
 
 re : 
 	$(MAKE) fclean

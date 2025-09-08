@@ -81,7 +81,7 @@ void ConfigParser::parseClientMaxBodySize(
 			"[emerg] Invalid configuration: client_max_body_size '" +
 			tokens.at(i) + "'");
 	}
-	if (size < 0 || ConfFile::LIMIT_CLIENT_MAX_BODY_SIZE < size)
+	if (size < 0 || ConfFile::DEFAULT::LIMIT_CLIENT_MAX_BODY_SIZE < size)
 		throw ConfigException(
 			"[emerg] Invalid configuration: client_max_body_size '" +
 			tokens.at(i) + "'");
@@ -210,7 +210,7 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 
 void ConfigParser::loadFromFile(const char* filePath) {
 	const std::string readFile =
-		readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH());
+		readFromFile(filePath ? filePath : ConfFile::DEFAULT::PATH());
 	parse(tokenize(readFile));
 	for (unsigned long i = 0; i < _configs.size(); i++) {
 		ConfigValidator::validate(_configs[i]);
