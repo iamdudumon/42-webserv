@@ -5,15 +5,6 @@ bool ConfigParser::validateArgument(int ac) {
 	return true;
 }
 
-std::string ConfigParser::readFromFile(const char* filePath) {
-	std::ifstream configFile(filePath);
-	if (!configFile.is_open())
-		throw ConfigException("[Error] File open failed: " + std::string(filePath));
-	std::ostringstream oss;
-	oss << configFile.rdbuf();
-	return oss.str();
-}
-
 std::vector<std::string> ConfigParser::tokenize(const std::string& readFile) {
 	std::string token;
 	std::vector<std::string> tokens;
@@ -77,9 +68,8 @@ void ConfigParser::parseClientMaxBodySize(const std::vector<std::string>& tokens
 							  tokens.at(i) + "'");
 	}
 	if (size < 0 || ConfFile::DEFAULT::LIMIT_CLIENT_MAX_BODY_SIZE < size)
-		throw ConfigException(
-			"[emerg] Invalid configuration: client_max_body_size '" +
-			tokens.at(i) + "'");
+		throw ConfigException("[emerg] Invalid configuration: client_max_body_size '" +
+							  tokens.at(i) + "'");
 	config.setClientMaxBodySize(size);
 	expectToken(tokens, ++i, ";");
 }
@@ -197,9 +187,10 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 }
 
 void ConfigParser::loadFromFile(const char* filePath) {
-	const std::string readFile =
-		readFromFile(filePath ? filePath : ConfFile::DEFAULT_PATH());
-	parse(tokenize(readFile));
+	const FileInfo fileInfo = FileReader::readFile(filePath ? filePath : ConfFile::DEFAULT::PATH());
+	if (fileInfo.error)
+		throw ConfigException("[Error] File open failed: " + std::string(filePath));
+	parse(tokenize(fileInfo.content));
 	for (unsigned long i = 0; i < _configs.size(); i++) {
 		ConfigValidator::validate(_configs[i]);
 	}

@@ -16,10 +16,10 @@
 
 #include "../../include/SystemConfig.hpp"
 #include "../config/model/Config.hpp"
+#include "../file/FileReader.hpp"
 #include "../http/model/HttpPacket.hpp"
 #include "../http/parser/HttpParser.hpp"
 #include "../http/serializer/HttpSerializer.hpp"
-#include "../io/FileReader.hpp"
 #include "epoll/manager/EpollManager.hpp"
 #include "exception/ServerException.hpp"
 #include "wrapper/SocketWrapper.hpp"
