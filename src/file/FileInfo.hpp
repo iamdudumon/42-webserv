@@ -1,3 +1,4 @@
+// FileInfo.hpp
 #ifndef FILE_INFO_HPP
 #define FILE_INFO_HPP
 
