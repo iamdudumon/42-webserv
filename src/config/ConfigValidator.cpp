@@ -5,8 +5,8 @@ void ConfigValidator::validatePort(const Config& config, std::set<int>& ports) {
 	if (port < 0) {
 		throw ConfigException("[emerg] no \"listen\" directive in server block");
 	}
-	std::pair<std::set<int>::iterator, bool> result = ports.insert(port);
-	if (!result.second) {
+	std::pair<std::set<int>::iterator, bool> inserted = ports.insert(port);
+	if (!inserted.second) {
 		throw ConfigException("[emerg] duplicate listen on " + int_tostr(port));
 	}
 }

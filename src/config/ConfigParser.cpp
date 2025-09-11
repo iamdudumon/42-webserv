@@ -188,7 +188,7 @@ void ConfigParser::parse(const std::vector<std::string>& tokens) {
 
 void ConfigParser::loadFromFile(const char* filePath) {
 	const FileInfo fileInfo = FileReader::readFile(filePath ? filePath : ConfFile::DEFAULT::PATH());
-	if (fileInfo.error) throw ConfigException("[Error] File open failed: " + std::string(filePath));
+	if (fileInfo.error) throw ConfigException("[Error] confFile open failed");
 	parse(tokenize(fileInfo.content));
 	ConfigValidator::validate(_configs);
 }
