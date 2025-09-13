@@ -1,5 +1,7 @@
 #include "ConfigValidator.hpp"
 
+#include "../utils/str_utils.hpp"
+
 void ConfigValidator::validatePort(const Config& config, std::set<int>& ports) {
 	int port = config.getListen();
 	if (port < 0) {
