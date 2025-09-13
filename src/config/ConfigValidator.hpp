@@ -4,7 +4,6 @@
 
 #include <set>
 
-#include "../utils/str_utils.hpp"
 #include "exception/ConfigException.hpp"
 #include "model/Config.hpp"
 
@@ -15,7 +14,7 @@ class ConfigValidator {
 		static void validateLocation(const std::string&, const ConfigLocation&);
 
 	public:
-		static void validate(const std::vector<Config>& configs);
+		static void validate(const std::vector<Config>&);
 };
 
 #endif
