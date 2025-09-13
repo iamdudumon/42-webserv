@@ -1,11 +1,11 @@
 #include "Config.hpp"
 
-Config::Config()
-	: _auto_index(false),
-	  _listen(-1),
-	  _client_max_body_size(ConfFile::DEFAULT::CLIENT_MAX_BODY_SIZE),
-	  _server_name(ConfFile::DEFAULT::SERVER_NAME()),
-	  _index(ConfFile::DEFAULT::INDEX()) {}
+Config::Config() :
+	_auto_index(false),
+	_listen(-1),
+	_client_max_body_size(ConfFile::DEFAULT::CLIENT_MAX_BODY_SIZE),
+	_server_name(ConfFile::DEFAULT::SERVER_NAME()),
+	_index(ConfFile::DEFAULT::INDEX()) {}
 
 Config::Config(const Config& other) {
 	*this = other;
