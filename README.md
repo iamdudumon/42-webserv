@@ -7,3 +7,8 @@
 - [iamdudumon](https://github.com/iamdudumon)
 - [dendrog](https://github.com/dendrog)
 - [jinseong97](https://github.com/jinseong97)
+
+
+### Coding Conventions
+
+Wiki: https://github.com/42-dukim/42-webserv/wiki/CODESTYLE.md
