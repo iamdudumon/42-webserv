@@ -3,13 +3,11 @@
 #define SERVER_EPOLL_MANAGER_HPP
 
 #include <sys/epoll.h>
-#include <unistd.h>
 
 #include <vector>
 
 #include "../../../../include/SystemConfig.hpp"
 #include "../counter/EpollCounter.hpp"
-#include "../exception/EpollException.hpp"
 
 namespace server {
 	class EpollManager {

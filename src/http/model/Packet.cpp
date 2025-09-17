@@ -1,6 +1,8 @@
 // Packet.cpp
 #include "Packet.hpp"
 
+#include <stdexcept>
+
 namespace http {
 	Packet::Packet(const StartLine& startLine, const Header& header, const Body& body) :
 		_startLine(startLine), _header(header), _body(body), _isRequest(true) {}

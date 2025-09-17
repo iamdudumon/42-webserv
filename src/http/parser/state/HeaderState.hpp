@@ -2,8 +2,6 @@
 #ifndef HTTP_PARSER_HEADERSTATE_HPP
 #define HTTP_PARSER_HEADERSTATE_HPP
 
-#include <string>
-
 #include "../Parser.hpp"
 #include "ParseState.hpp"
 

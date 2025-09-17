@@ -2,8 +2,7 @@
 #ifndef HTTP_PARSER_PACKETLINESTATE_HPP
 #define HTTP_PARSER_PACKETLINESTATE_HPP
 
-#include <string>
-
+#include "../Parser.hpp"
 #include "ParseState.hpp"
 
 namespace http {

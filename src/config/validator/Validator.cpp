@@ -2,6 +2,7 @@
 #include "Validator.hpp"
 
 #include "../../utils/str_utils.hpp"
+#include "../exception/Exception.hpp"
 
 namespace config {
 	void Validator::validatePort(const Config& config, std::set<int>& ports) {

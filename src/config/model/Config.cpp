@@ -1,6 +1,9 @@
 // Config.cpp
 #include "Config.hpp"
 
+#include "../Defaults.hpp"
+#include "../exception/Exception.hpp"
+
 namespace config {
 	Config::Config() :
 		_auto_index(false),

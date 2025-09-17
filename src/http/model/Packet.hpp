@@ -2,7 +2,6 @@
 #ifndef HTTP_MODEL_PACKET_HPP
 #define HTTP_MODEL_PACKET_HPP
 
-#include <stdexcept>
 #include <string>
 
 #include "Body.hpp"

@@ -1,6 +1,10 @@
 // EpollManager.cpp
 #include "EpollManager.hpp"
 
+#include <unistd.h>
+
+#include "../exception/EpollException.hpp"
+
 namespace server {
 	EpollManager::EpollManager() : _epollFd(-1), _eventCount(0) {}
 

@@ -2,6 +2,7 @@
 #include "Parser.hpp"
 
 #include <cctype>
+#include <stdexcept>
 
 #include "../../file/FileReader.hpp"
 #include "../Defaults.hpp"

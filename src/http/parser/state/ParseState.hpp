@@ -2,8 +2,6 @@
 #ifndef HTTP_PARSER_PARSESTATE_HPP
 #define HTTP_PARSER_PARSESTATE_HPP
 
-#include <string>
-
 namespace http {
 	class Parser;
 

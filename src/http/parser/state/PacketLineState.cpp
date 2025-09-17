@@ -3,8 +3,6 @@
 
 #include <sstream>
 
-#include "../Parser.hpp"
-
 namespace http {
 	void PacketLineState::parse(Parser* parser) {
 		std::string line = parser->readLine();

@@ -1,6 +1,10 @@
 // EpollCounter.cpp
 #include "EpollCounter.hpp"
 
+#include <algorithm>
+
+#include "../../../../include/SystemConfig.hpp"
+
 namespace server {
 	EpollCounter::EpollCounter() : _count(0) {}
 

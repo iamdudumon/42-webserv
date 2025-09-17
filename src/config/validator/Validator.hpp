@@ -3,8 +3,9 @@
 #define CONFIG_VALIDATOR_HPP
 
 #include <set>
+#include <string>
+#include <vector>
 
-#include "../exception/Exception.hpp"
 #include "../model/Config.hpp"
 
 namespace config {

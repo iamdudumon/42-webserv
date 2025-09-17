@@ -3,10 +3,8 @@
 #define CONFIG_MODEL_CONFIG_HPP
 
 #include <map>
+#include <string>
 #include <vector>
-
-#include "../Defaults.hpp"
-#include "../exception/Exception.hpp"
 
 namespace config {
 	struct LocationConfig {

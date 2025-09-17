@@ -2,7 +2,7 @@
 #ifndef HTTP_PARSER_BODYSTATE_HPP
 #define HTTP_PARSER_BODYSTATE_HPP
 
-#include <string>
+#include <cstddef>
 
 #include "../Parser.hpp"
 #include "ParseState.hpp"

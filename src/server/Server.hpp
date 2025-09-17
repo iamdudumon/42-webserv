@@ -3,23 +3,16 @@
 #define SERVER_HPP
 
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "../../include/SystemConfig.hpp"
 #include "../config/model/Config.hpp"
 #include "../http/model/Packet.hpp"
-#include "../http/parser/Parser.hpp"
-#include "../http/serializer/Serializer.hpp"
 #include "epoll/manager/EpollManager.hpp"
-#include "exception/Exception.hpp"
-#include "wrapper/SocketWrapper.hpp"
 
 namespace server {
 	class Server {
