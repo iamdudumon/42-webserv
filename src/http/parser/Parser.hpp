@@ -1,6 +1,6 @@
 // Parser.hpp
-#ifndef HTTP_PARSER_PARSER_HPP
-#define HTTP_PARSER_PARSER_HPP
+#ifndef HTTP_PARSER_HPP
+#define HTTP_PARSER_HPP
 
 #include <string>
 

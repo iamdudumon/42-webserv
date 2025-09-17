@@ -1,6 +1,6 @@
 // DoneState.hpp
-#ifndef HTTP_PARSER_STATE_DONESTATE_HPP
-#define HTTP_PARSER_STATE_DONESTATE_HPP
+#ifndef HTTP_PARSER_DONESTATE_HPP
+#define HTTP_PARSER_DONESTATE_HPP
 
 #include <string>
 

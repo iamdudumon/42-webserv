@@ -1,6 +1,6 @@
 // BodyState.hpp
-#ifndef HTTP_PARSER_STATE_BODYSTATE_HPP
-#define HTTP_PARSER_STATE_BODYSTATE_HPP
+#ifndef HTTP_PARSER_BODYSTATE_HPP
+#define HTTP_PARSER_BODYSTATE_HPP
 
 #include <string>
 

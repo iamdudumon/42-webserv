@@ -1,6 +1,6 @@
 // Exception.hpp
-#ifndef CONFIG_EXCEPTION_EXCEPTION_HPP
-#define CONFIG_EXCEPTION_EXCEPTION_HPP
+#ifndef CONFIG_EXCEPTION_HPP
+#define CONFIG_EXCEPTION_HPP
 
 #include <exception>
 #include <string>

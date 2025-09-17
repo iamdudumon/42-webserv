@@ -1,6 +1,6 @@
 // Parser.hpp
-#ifndef CONFIG_PARSER_PARSER_HPP
-#define CONFIG_PARSER_PARSER_HPP
+#ifndef CONFIG_PARSER_HPP
+#define CONFIG_PARSER_HPP
 
 #include <string>
 #include <vector>

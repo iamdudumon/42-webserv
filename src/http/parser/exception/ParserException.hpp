@@ -1,6 +1,6 @@
 // ParserException.hpp
-#ifndef HTTP_PARSER_EXCEPTION_PARSEREXCEPTION_HPP
-#define HTTP_PARSER_EXCEPTION_PARSEREXCEPTION_HPP
+#ifndef HTTP_PARSER_EXCEPTION_HPP
+#define HTTP_PARSER_EXCEPTION_HPP
 
 #include <stdexcept>
 #include <string>

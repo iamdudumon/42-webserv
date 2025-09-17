@@ -1,6 +1,6 @@
 // Validator.hpp
-#ifndef CONFIG_VALIDATOR_VALIDATOR_HPP
-#define CONFIG_VALIDATOR_VALIDATOR_HPP
+#ifndef CONFIG_VALIDATOR_HPP
+#define CONFIG_VALIDATOR_HPP
 
 #include <set>
 
