@@ -1,21 +1,21 @@
 // PacketLine.hpp
-#ifndef PACKET_LINE
-#define PACKET_LINE
+#ifndef HTTP_MODEL_PACKETLINE_HPP
+#define HTTP_MODEL_PACKETLINE_HPP
 
 #include <string>
 
-#include "HttpEnums.hpp"
+#include "../Enums.hpp"
 
-namespace HTTP {
+namespace http {
 	struct StartLine {
-			HTTP::Method::Value method;
+			http::Method::Value method;
 			std::string target;
 			std::string version;
 	};
 
 	struct StatusLine {
 			std::string version;
-			HTTP::StatusCode::Value statusCode;
+			http::StatusCode::Value statusCode;
 			std::string reasonPhrase;
 	};
 }

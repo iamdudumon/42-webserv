@@ -1,22 +1,24 @@
 // BodyState.hpp
-#ifndef BODYSTATE_HPP
-#define BODYSTATE_HPP
+#ifndef HTTP_PARSER_STATE_BODYSTATE_HPP
+#define HTTP_PARSER_STATE_BODYSTATE_HPP
 
 #include <string>
 
-#include "../HttpParser.hpp"
+#include "../Parser.hpp"
 #include "ParseState.hpp"
 
-class BodyState : public ParseState {
-	public:
-		BodyState(size_t remain) : _done(false), _remain(remain) {}
+namespace http {
+	class BodyState : public ParseState {
+		public:
+			BodyState(size_t remain) : _done(false), _remain(remain) {}
 
-		virtual void parse(HttpParser*);
-		virtual void handleNextState(HttpParser*);
+			virtual void parse(Parser*);
+			virtual void handleNextState(Parser*);
 
-	private:
-		bool _done;
-		size_t _remain;
-};
+		private:
+			bool _done;
+			size_t _remain;
+	};
+}  // namespace http
 
 #endif

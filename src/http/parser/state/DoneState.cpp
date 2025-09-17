@@ -1,6 +1,8 @@
 // DoneState.cpp
 #include "DoneState.hpp"
 
-void DoneState::parse(HttpParser*) {}
+namespace http {
+	void DoneState::parse(Parser*) {}
 
-void DoneState::handleNextState(HttpParser*) {}
+	void DoneState::handleNextState(Parser*) {}
+}  // namespace http

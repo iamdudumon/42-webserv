@@ -1,20 +1,22 @@
 // PacketLineState.hpp
-#ifndef PACKETLINESTATE_HPP
-#define PACKETLINESTATE_HPP
+#ifndef HTTP_PARSER_STATE_PACKETLINESTATE_HPP
+#define HTTP_PARSER_STATE_PACKETLINESTATE_HPP
 
 #include <string>
 
 #include "ParseState.hpp"
 
-class PacketLineState : public ParseState {
-	public:
-		PacketLineState() : _done(false) {}
+namespace http {
+	class PacketLineState : public ParseState {
+		public:
+			PacketLineState() : _done(false) {}
 
-		virtual void parse(HttpParser*);
-		virtual void handleNextState(HttpParser*);
+			virtual void parse(Parser*);
+			virtual void handleNextState(Parser*);
 
-	private:
-		bool _done;
-};
+		private:
+			bool _done;
+	};
+}  // namespace http
 
 #endif
