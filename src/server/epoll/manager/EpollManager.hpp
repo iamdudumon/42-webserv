@@ -6,13 +6,13 @@
 
 #include <vector>
 
-#include "../../../../include/SystemConfig.hpp"
+#include "../../Defaults.hpp"
 #include "../counter/EpollCounter.hpp"
 
 namespace server {
 	class EpollManager {
 		private:
-			static const int kMaxEvents = SystemConfig::Size::EPOLL_SIZE;
+			static const int kMaxEvents = defaults::EPOLL_SIZE;
 			int _epollFd;
 			int _eventCount;
 			epoll_event _event;

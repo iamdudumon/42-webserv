@@ -11,10 +11,10 @@
 #include <iostream>
 #include <sstream>
 
-#include "../../include/SystemConfig.hpp"
 #include "../http/parser/Parser.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../router/Router.hpp"
+#include "Defaults.hpp"
 #include "epoll/exception/EpollException.hpp"
 #include "wrapper/SocketWrapper.hpp"
 
@@ -102,12 +102,12 @@ namespace server {
 	}
 
 	std::string Server::readSocket(int socketFd) {
-		char buffer[SystemConfig::Size::BUFFER_SIZE] = {0};
+		char buffer[defaults::BUFFER_SIZE] = {0};
 		int readSize;
 		std::string request;
 
-		while ((readSize = ::read(socketFd, buffer, SystemConfig::Size::BUFFER_SIZE)) ==
-			   SystemConfig::Size::BUFFER_SIZE) {
+		while ((readSize = ::read(socketFd, buffer, defaults::BUFFER_SIZE)) ==
+			   defaults::BUFFER_SIZE) {
 			request.append(buffer, readSize);
 		}
 		if (readSize > 0) request.append(buffer, readSize);

@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-#include "../../../../include/SystemConfig.hpp"
+#include "../../Defaults.hpp"
 
 namespace server {
 	EpollCounter::EpollCounter() : _count(0) {}
 
 	bool EpollCounter::addFd(int fd) {
-		if (_count >= SystemConfig::Size::EPOLL_SIZE) return false;
+		if (_count >= defaults::EPOLL_SIZE) return false;
 		_fds.push_back(fd);
 		_count++;
 		return true;
