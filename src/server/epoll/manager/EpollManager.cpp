@@ -1,44 +1,57 @@
+// EpollManager.cpp
 #include "EpollManager.hpp"
 
-void EpollManager::initEpoll() {
-	_epollFd = epoll_create(EPOLL_SIZE);
-	_epollEvents.resize(EPOLL_SIZE);
-}
+namespace server {
+	EpollManager::EpollManager() : _epollFd(-1), _eventCount(0) {}
 
-void EpollManager::addEpollFd(int socketFd) {
-	if (!_epollCounter.addFd(socketFd)) {
-		deleteEpollFd(_epollCounter.popFd());
-		_epollCounter.addFd(socketFd);
+	EpollManager::~EpollManager() {
+		if (_epollFd != -1) close(_epollFd);
 	}
-	_event.events = EPOLLIN | EPOLLRDHUP;
-	_event.data.fd = socketFd;
-	epoll_ctl(_epollFd, EPOLL_CTL_ADD, socketFd, &_event);
-}
 
-void EpollManager::deleteEpollFd(int socketFd) {
-	if (_epollCounter.deleteFd(socketFd)) {
-		epoll_ctl(_epollFd, EPOLL_CTL_DEL, socketFd, NULL);
-		close(socketFd);
+	int EpollManager::fd() const {
+		return _epollFd;
 	}
-}
 
-void EpollManager::waitEvent() {
-	if ((_eventCount = (epoll_wait(_epollFd, (struct epoll_event*) _epollEvents.data(), EPOLL_SIZE,
-								   1000))) == -1)
-		throw EpollException("wait event");
-}
-
-int EpollManager::getEpollFd() const {
-	return _epollFd;
-}
-
-int EpollManager::getEventCount() const {
-	return _eventCount;
-}
-
-const struct epoll_event& EpollManager::getEpollEventsAt(int index) const {
-	if (index < 0 || static_cast<int>(_epollEvents.size()) <= index) {
-		throw EpollException("events out of bounds");
+	int EpollManager::eventCount() const {
+		return _eventCount;
 	}
-	return _epollEvents[index];
-}
+
+	const epoll_event& EpollManager::eventAt(int index) const {
+		if (index < 0 || static_cast<int>(_events.size()) <= index) {
+			throw EpollException("events out of bounds");
+		}
+		return _events[index];
+	}
+
+	void EpollManager::init() {
+		_epollFd = epoll_create(kMaxEvents);
+		if (_epollFd == -1) throw EpollException("create");
+		_events.resize(kMaxEvents);
+	}
+
+	void EpollManager::add(int fd) {
+		if (!_counter.addFd(fd)) {
+			remove(_counter.popFd());
+			_counter.addFd(fd);
+		}
+		_event.events = EPOLLIN | EPOLLRDHUP;
+		_event.data.fd = fd;
+		if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_event) == -1) {
+			throw EpollException("ctl add");
+		}
+	}
+
+	void EpollManager::remove(int fd) {
+		if (_counter.deleteFd(fd)) {
+			if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+				throw EpollException("ctl del");
+			}
+			close(fd);
+		}
+	}
+
+	void EpollManager::wait() {
+		_eventCount = epoll_wait(_epollFd, _events.data(), kMaxEvents, 1000);
+		if (_eventCount == -1) throw EpollException("wait");
+	}
+}  // namespace server

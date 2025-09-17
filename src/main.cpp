@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "config/model/Config.hpp"
 #include "config/parser/Parser.hpp"
 #include "server/Server.hpp"
@@ -7,9 +9,9 @@ int main(int argc, char* argv[]) {
 		config::Parser parser;
 		if (parser.validateArgument(argc)) parser.loadFromFile(argv[1]);
 		std::vector<config::Config> configs = parser.getConfigs();
-		Server server(configs);
+		server::Server server(configs);
 
-		server.runServer();
+		server.run();
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << '\n';
 	}
