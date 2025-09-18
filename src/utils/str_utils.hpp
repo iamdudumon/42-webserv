@@ -2,9 +2,7 @@
 #ifndef STR_UTILS_HPP
 #define STR_UTILS_HPP
 
-#include <algorithm>
-#include <cctype>
-#include <sstream>
+#include <string>
 
 std::string int_tostr(int);
 int str_toint(const std::string&);

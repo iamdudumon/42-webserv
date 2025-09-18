@@ -1,21 +1,22 @@
 // HeaderState.hpp
-#ifndef HEADERSTATE_HPP
-#define HEADERSTATE_HPP
+#ifndef HTTP_PARSER_HEADERSTATE_HPP
+#define HTTP_PARSER_HEADERSTATE_HPP
 
-#include <string>
-
-#include "../HttpParser.hpp"
+#include "../Parser.hpp"
 #include "ParseState.hpp"
 
-class HeaderState : public ParseState {
-	public:
-		HeaderState() : _done(false) {}
+namespace http {
+	class HeaderState : public ParseState {
+		public:
+			HeaderState() : _done(false) {}
 
-		virtual void parse(HttpParser*);
-		virtual void handleNextState(HttpParser*);
+			virtual void parse(Parser*);
+			virtual void handleNextState(Parser*);
 
-	private:
-		bool _done;
-};
+		private:
+			bool _done;
+	};
+
+}  // namespace http
 
 #endif

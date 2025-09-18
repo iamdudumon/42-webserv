@@ -1,23 +1,22 @@
 // EpollCounter.hpp
-#ifndef EPOLLCOUNTER_HPP
-#define EPOLLCOUNTER_HPP
+#ifndef SERVER_EPOLL_COUNTER_HPP
+#define SERVER_EPOLL_COUNTER_HPP
 
-#include <algorithm>
 #include <vector>
 
-#include "../../../../include/SystemConfig.hpp"
+namespace server {
+	class EpollCounter {
+		private:
+			std::vector<int> _fds;
+			int _count;
 
-class EpollCounter {
-	private:
-		std::vector<int> _epollFdVector;
-		int _epollCount;
+		public:
+			EpollCounter();
 
-	public:
-		EpollCounter();
-
-		bool addFd(int);
-		bool deleteFd(int);
-		int popFd();
-};
+			bool addFd(int);
+			bool deleteFd(int);
+			int popFd();
+	};
+}  // namespace server
 
 #endif

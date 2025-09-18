@@ -1,17 +1,16 @@
 // ParserState.hpp
-#ifndef PARSESTATE_HPP
-#define PARSESTATE_HPP
+#ifndef HTTP_PARSER_PARSESTATE_HPP
+#define HTTP_PARSER_PARSESTATE_HPP
 
-#include <string>
+namespace http {
+	class Parser;
 
-class HttpParser;
-
-// 추상 상태 클래스
-class ParseState {
-	public:
-		virtual ~ParseState() {};
-		virtual void parse(HttpParser*) = 0;
-		virtual void handleNextState(HttpParser*) = 0;
-};
+	class ParseState {
+		public:
+			virtual ~ParseState() {};
+			virtual void parse(Parser*) = 0;
+			virtual void handleNextState(Parser*) = 0;
+	};
+}  // namespace http
 
 #endif

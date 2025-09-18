@@ -1,41 +1,41 @@
-#ifndef SOCKETWRAPPER_HPP
-#define SOCKETWRAPPER_HPP
+// SocketWrapper.hpp
+#ifndef SERVER_SOCKETWRAPPER_HPP
+#define SERVER_SOCKETWRAPPER_HPP
 
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../exception/ServerException.hpp"
+#include "../exception/Exception.hpp"
 
-namespace SocketWrapper {
-	inline int accept(int socket, struct sockaddr* address, socklen_t* address_len) {
-		int returnValue = ::accept(socket, address, address_len);
-		if (returnValue < 0) throw ServerException("accept");
-		return returnValue;
-	}
+namespace server {
+	namespace socket {
+		inline int create(int domain, int type, int protocol) {
+			int fd = ::socket(domain, type, protocol);
+			if (fd < 0) throw Exception("socket");
+			return fd;
+		}
 
-	inline void bind(int socket, const struct sockaddr* address, socklen_t address_len) {
-		int returnValue = ::bind(socket, address, address_len);
-		if (returnValue < 0) throw ServerException("bind");
-	}
+		inline void bind(int fd, const sockaddr* address, socklen_t addressLen) {
+			if (::bind(fd, address, addressLen) < 0) throw Exception("bind");
+		}
 
-	inline void listen(int socket, int backlog) {
-		int returnValue = ::listen(socket, backlog);
-		if (returnValue < 0) throw ServerException("listen");
-	}
+		inline void listen(int fd, int backlog) {
+			if (::listen(fd, backlog) < 0) throw Exception("listen");
+		}
 
-	inline int socket(int domain, int type, int protocol) {
-		int returnValue = ::socket(domain, type, protocol);
-		if (returnValue < 0) throw ServerException("socket");
-		return returnValue;
-	}
+		inline int accept(int fd, sockaddr* address, socklen_t* addressLen) {
+			int client = ::accept(fd, address, addressLen);
+			if (client < 0) throw Exception("accept");
+			return client;
+		}
 
-	inline void setsockopt(int socket, int level, int option_name, const void* option_value,
-						   socklen_t option_len) {
-		int returnValue = ::setsockopt(socket, level, option_name, option_value, option_len);
-		if (returnValue < 0) throw ServerException("setsockopt");
-	}
-}
+		inline void setOption(int fd, int level, int optionName, const void* optionValue,
+							  socklen_t optionLen) {
+			if (::setsockopt(fd, level, optionName, optionValue, optionLen) < 0)
+				throw Exception("setsockopt");
+		}
+	}  // namespace socket
+}  // namespace server
 
 #endif

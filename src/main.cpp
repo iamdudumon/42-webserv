@@ -1,14 +1,17 @@
-#include "config/ConfigParser.hpp"
+#include <iostream>
+
 #include "config/model/Config.hpp"
+#include "config/parser/Parser.hpp"
 #include "server/Server.hpp"
 
 int main(int argc, char* argv[]) {
 	try {
-		ConfigParser parser;
+		config::Parser parser;
 		if (parser.validateArgument(argc)) parser.loadFromFile(argv[1]);
-		std::vector<Config> configs = parser.getConfigs();
-		Server server(configs);
-		server.runServer();
+		std::vector<config::Config> configs = parser.getConfigs();
+		server::Server server(configs);
+
+		server.run();
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << '\n';
 	}

@@ -1,5 +1,8 @@
 #include "FileReader.hpp"
 
+#include <fstream>
+#include <sstream>
+
 FileInfo FileReader::readFile(const char* path) {
 	FileInfo info;
 	if (path == NULL) {

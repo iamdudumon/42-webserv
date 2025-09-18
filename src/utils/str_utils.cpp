@@ -1,5 +1,9 @@
 #include "str_utils.hpp"
 
+#include <algorithm>
+#include <cctype>
+#include <sstream>
+
 std::string int_tostr(int num) {
 	std::stringstream s;
 

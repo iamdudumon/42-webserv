@@ -3,51 +3,44 @@
 #define SERVER_HPP
 
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <algorithm>
-#include <exception>
-#include <iostream>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "../../include/SystemConfig.hpp"
 #include "../config/model/Config.hpp"
-#include "../file/FileReader.hpp"
-#include "../http/model/HttpPacket.hpp"
-#include "../http/parser/HttpParser.hpp"
-#include "../http/serializer/HttpSerializer.hpp"
+#include "../http/model/Packet.hpp"
 #include "epoll/manager/EpollManager.hpp"
-#include "exception/ServerException.hpp"
-#include "wrapper/SocketWrapper.hpp"
 
-class Server {
-	private:
-		std::vector<Config> _configs;
-		std::set<int> _serverSockets;
-		int _clientSocket;
-		int _socketOption;
-		int _addressSize;
-		struct sockaddr_in _serverAddress;
-		struct sockaddr_in _clientAddress;
-		EpollManager _epollManager;
+namespace server {
+	class Server {
+		private:
+			std::vector<config::Config> _configs;
+			std::set<int> _serverSockets;
+			int _clientSocket;
+			int _socketOption;
+			int _addressSize;
+			sockaddr_in _serverAddress;
+			sockaddr_in _clientAddress;
+			EpollManager _epollManager;
 
-		void initAddress(int);
-		void initServer();
-		void loopServer();
-		void writeHttpPacket(int, HttpPacket);
-		void handleEvents();
-		void writeSocket(int, std::string);
-		std::string readSocket(int);
-		HttpPacket convertHttpPacket(std::string&);
+			void initAddress(int);
+			void initServer();
+			void loop();
+			void writePacket(int, const http::Packet&);
+			void handleEvents();
+			void writeSocket(int, const std::string&);
+			std::string readSocket(int);
+			http::Packet convertPacket(std::string&);
 
-	public:
-		Server(std::vector<Config>);
+		public:
+			explicit Server(const std::vector<config::Config>&);
 
-		void runServer();
-};
+			void run();
+	};
+
+}  // namespace server
 
 #endif

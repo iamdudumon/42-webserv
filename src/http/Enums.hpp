@@ -1,13 +1,13 @@
-// HttpEnums.hpp
-#ifndef HTTPENUMS_HPP
-#define HTTPENUMS_HPP
+// Enums.hpp
+#ifndef HTTP_ENUMS_HPP
+#define HTTP_ENUMS_HPP
 
 #include <cstddef>
 #include <string>
 
-#include "../../utils/str_utils.hpp"
+#include "../utils/str_utils.hpp"
 
-namespace HTTP {
+namespace http {
 	namespace Method {
 		enum Value {
 			UNKNOWN_METHOD,
@@ -49,6 +49,8 @@ namespace HTTP {
 			Unauthorized = 401,
 			Forbidden = 403,
 			NotFound = 404,
+			MethodNotAllowed = 405,
+			RequestEntityTooLarge = 413,
 			InternalServerError = 500
 		};
 
@@ -68,6 +70,10 @@ namespace HTTP {
 					return "403";
 				case NotFound:
 					return "404";
+				case MethodNotAllowed:
+					return "405";
+				case RequestEntityTooLarge:
+					return "413";
 				case InternalServerError:
 					return "500";
 				default:
@@ -95,6 +101,10 @@ namespace HTTP {
 					return "Forbidden";
 				case NotFound:
 					return "Not Found";
+				case MethodNotAllowed:
+					return "Method Not Allowed";
+				case RequestEntityTooLarge:
+					return "Request Entity Too Large";
 				case InternalServerError:
 					return "Internal Server Error";
 				default:
