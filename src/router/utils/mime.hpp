@@ -6,7 +6,7 @@
 
 namespace router {
 	namespace utils {
-		std::string byExtension(const std::string& filename);
+		std::string byExtension(const std::string&);
 	}  // namespace utils
 }  // namespace router
 

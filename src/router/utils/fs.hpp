@@ -6,10 +6,10 @@
 
 namespace router {
 	namespace utils {
-		bool exists(const std::string& path);
-		bool isDir(const std::string& path);
-		std::string join(const std::string& base, const std::string& rel);
-		bool safeUnder(const std::string& root, const std::string& path);
+		bool exists(const std::string&);
+		bool isDir(const std::string&);
+		std::string join(const std::string&, const std::string&);
+		bool safeUnder(const std::string&, const std::string&);
 	}  // namespace utils
 }  // namespace router
 

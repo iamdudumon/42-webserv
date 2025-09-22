@@ -6,9 +6,9 @@
 
 namespace router {
 	namespace utils {
-		std::string percentDecode(const std::string& s);
-		std::string normalizePath(const std::string& path);
-		std::string extractPath(const std::string& target);
+		std::string percentDecode(const std::string&);
+		std::string normalizePath(const std::string&);
+		std::string extractPath(const std::string&);
 	}  // namespace utils
 }  // namespace router
 
