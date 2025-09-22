@@ -20,7 +20,7 @@ namespace router {
 			std::string bestLocationPrefix(const config::Config&, const std::string&) const;
 
 			bool ensureRequestIsValid(const http::Packet&, RouteDecision&) const;
-			bool resolveLocation(const config::Config&, const http::Packet&, std::string&,
+			void resolveLocation(const config::Config&, const http::Packet&, std::string&,
 								 std::string&, RouteDecision&) const;
 			bool validateMethod(const config::Config&, const http::Packet&, const std::string&,
 								RouteDecision&) const;
