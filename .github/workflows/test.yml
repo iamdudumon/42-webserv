@@ -1,0 +1,16 @@
+name: Test Secrets
+on:
+  workflow_dispatch:
+
+jobs:
+  test-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if secret exists
+        run: |
+          if [ -z "${{ secrets.OPENAI_KEY }}" ]; then
+            echo "❌ OPENAI_KEY is not set"
+            exit 1
+          else
+            echo "✅ OPENAI_KEY is available"
+          fi
