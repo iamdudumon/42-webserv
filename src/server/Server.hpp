@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../config/model/Config.hpp"
+#include "../handler/RequestHandler.hpp"
 #include "../http/model/Packet.hpp"
 #include "epoll/manager/EpollManager.hpp"
 
@@ -25,6 +26,7 @@ namespace server {
 			sockaddr_in _serverAddress;
 			sockaddr_in _clientAddress;
 			EpollManager _epollManager;
+			handler::RequestHandler _requestHandler;
 
 			void initAddress(int);
 			void initServer();
@@ -40,7 +42,6 @@ namespace server {
 
 			void run();
 	};
-
 }  // namespace server
 
 #endif

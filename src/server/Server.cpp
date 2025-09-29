@@ -2,20 +2,17 @@
 #include "Server.hpp"
 
 #include <arpa/inet.h>
-#include <dirent.h>
 #include <sys/epoll.h>
 
 #include <algorithm>
 #include <cstring>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 
 #include "../http/parser/Parser.hpp"
 #include "../http/serializer/Serializer.hpp"
-#include "../router/Router.hpp"
 #include "Defaults.hpp"
 #include "epoll/exception/EpollException.hpp"
+#include "exception/Exception.hpp"
 #include "wrapper/SocketWrapper.hpp"
 
 namespace server {
@@ -82,100 +79,8 @@ namespace server {
 						localPort = ntohs(addr.sin_port);
 					}
 
-					router::Router routerInst;
-					router::RouteDecision decision =
-						routerInst.route(httpRequest, _configs, localPort);
-
-					http::StatusLine statusLine = {"HTTP/1.1", decision.status,
-												   http::StatusCode::to_reasonPhrase(
-													   decision.status)};
-					http::Packet httpResponse(statusLine, http::Header(), http::Body());
-
-					std::string allowStr;
-					for (size_t k = 0; k < decision.allow_methods.size(); ++k) {
-						if (k) allowStr += ", ";
-						allowStr += decision.allow_methods[k];
-					}
-
-					std::string fileData;
-					bool fileOk = false;
-					if (decision.action == router::RouteDecision::ServeFile) {
-						std::ifstream ifs(decision.fs_path.c_str(),
-										  std::ios::in | std::ios::binary);
-						if (ifs.is_open()) {
-							std::ostringstream ss;
-							ss << ifs.rdbuf();
-							fileData = ss.str();
-							fileOk = true;
-						}
-					}
-
-					switch (decision.action) {
-						case router::RouteDecision::ServeFile: {
-							if (!fileOk) {
-								httpResponse = http::Packet({"HTTP/1.1", http::StatusCode::NotFound,
-															 http::StatusCode::to_reasonPhrase(
-																 http::StatusCode::NotFound)},
-															http::Header(), http::Body());
-								httpResponse.addHeader("Content-Type", "text/plain");
-								const char* msg = "Not Found";
-								httpResponse.appendBody(msg, 9);
-								break;
-							}
-							httpResponse.addHeader("Content-Type",
-												   decision.content_type_hint.empty()
-													   ? "application/octet-stream"
-													   : decision.content_type_hint);
-							if (!fileData.empty())
-								httpResponse.appendBody(fileData.data(), fileData.size());
-							break;
-						}
-						case router::RouteDecision::ServeAutoIndex: {
-							std::ostringstream ss;
-							ss << "<html><body><h1>Index of " << decision.fs_path << "</h1><ul>";
-							DIR* dp = opendir(decision.fs_path.c_str());
-							if (dp) {
-								dirent* ent;
-								while ((ent = readdir(dp)) != NULL) {
-									std::string name = ent->d_name;
-									if (name == "." || name == "..") continue;
-									ss << "<li>" << name << "</li>";
-								}
-								closedir(dp);
-							}
-							ss << "</ul></body></html>";
-							std::string html = ss.str();
-							httpResponse.addHeader("Content-Type", "text/html");
-							httpResponse.appendBody(html.c_str(), html.size());
-							break;
-						}
-						case router::RouteDecision::Redirect: {
-							httpResponse.addHeader("Location", decision.redirect_location);
-							std::string msg =
-								std::string("Redirecting to ") + decision.redirect_location;
-							httpResponse.addHeader("Content-Type", "text/plain");
-							httpResponse.appendBody(msg.c_str(), msg.size());
-							break;
-						}
-						case router::RouteDecision::Cgi: {
-							httpResponse.addHeader("Content-Type", "text/plain");
-							const char* msg = "CGI not implemented";
-							httpResponse.appendBody(msg, 20);
-							break;
-						}
-						case router::RouteDecision::Error:
-						default: {
-							if (decision.status == http::StatusCode::MethodNotAllowed &&
-								!allowStr.empty()) {
-								httpResponse.addHeader("Allow", allowStr);
-							}
-							const char* reason = http::StatusCode::to_reasonPhrase(decision.status);
-							httpResponse.addHeader("Content-Type", "text/plain");
-							httpResponse.appendBody(reason, std::strlen(reason));
-							break;
-						}
-					}
-
+					http::Packet httpResponse =
+						_requestHandler.handle(httpRequest, _configs, localPort);
 					writePacket(clientFd, httpResponse);
 				}
 			}
@@ -217,5 +122,4 @@ namespace server {
 		}
 		loop();
 	}
-
 }  // namespace server
