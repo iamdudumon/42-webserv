@@ -45,6 +45,18 @@ namespace server {
 		}
 	}
 
+	void EpollManager::add(int fd, unsigned int events) {
+		if (!_counter.addFd(fd)) {
+			remove(_counter.popFd());
+			_counter.addFd(fd);
+		}
+		_event.events = events;
+		_event.data.fd = fd;
+		if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &_event) == -1) {
+			throw EpollException("ctl add");
+		}
+	}
+
 	void EpollManager::remove(int fd) {
 		if (_counter.deleteFd(fd)) {
 			if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1) {

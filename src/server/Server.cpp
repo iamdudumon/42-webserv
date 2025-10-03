@@ -20,6 +20,15 @@ using namespace server;
 Server::Server(const std::vector<config::Config>& configs) :
 	_configs(configs), _socketOption(1), _addressSize(sizeof(_serverAddress)) {
 	_epollManager.init();
+
+	// SIGCHLD 핸들러 설정
+	struct sigaction sa;
+	sa.sa_handler = handler::cgi::Manager::sigchld_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+		throw Exception("sigaction failed");
+	}
 }
 
 void Server::initAddress(int index) {
@@ -60,12 +69,30 @@ void Server::loop() {
 void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.eventCount(); i++) {
 		const epoll_event& event = _epollManager.eventAt(i);
+		int fd = event.data.fd;
+
+		if (_requestHandler.isCgiProcess(fd)) {
+			_requestHandler.handleCgiEvent(fd, _epollManager);
+
+			int clientFd = _requestHandler.getClientFd(fd);
+			if (clientFd != -1 && _requestHandler.isCgiCompleted(clientFd)) {
+				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd);
+				writeSocket(clientFd, cgiResponse);
+				_requestHandler.removeCgiProcess(clientFd);
+				_epollManager.remove(clientFd);
+			}
+			continue;
+		}
+		// 새로운 클라이언트 연결 처리
 		if (_serverSockets.find(event.data.fd) != _serverSockets.end()) {
 			_clientSocket =
-				socket::accept(event.data.fd, reinterpret_cast<sockaddr*>(&_clientAddress),
+				socket::accept(event.data.fd,
+							   reinterpret_cast<sockaddr*>(&_clientAddress),
 							   reinterpret_cast<socklen_t*>(&_addressSize));
 			_epollManager.add(_clientSocket);
+
 		} else {
+			// 기존 클라이언트 요청 처리
 			int clientFd = event.data.fd;
 			std::string buffer = readSocket(clientFd);
 			if (!buffer.size() || event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
@@ -79,7 +106,11 @@ void Server::handleEvents() {
 				if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
 					localPort = ntohs(addr.sin_port);
 				}
-
+				router::RouteDecision decision = _requestHandler.route(httpRequest, _configs, localPort);
+				if (decision.action == router::RouteDecision::Cgi) {
+					_requestHandler.handleCgi(httpRequest, _configs, localPort, clientFd, _epollManager);
+					continue;
+				}
 				http::Packet httpResponse =
 					_requestHandler.handle(httpRequest, _configs, localPort);
 				writePacket(clientFd, httpResponse);
@@ -93,8 +124,7 @@ std::string Server::readSocket(int socketFd) {
 	int readSize;
 	std::string request;
 
-	while ((readSize = ::read(socketFd, buffer, defaults::BUFFER_SIZE)) ==
-		   defaults::BUFFER_SIZE) {
+	while ((readSize = ::read(socketFd, buffer, defaults::BUFFER_SIZE)) == defaults::BUFFER_SIZE) {
 		request.append(buffer, readSize);
 	}
 	if (readSize > 0) request.append(buffer, readSize);
