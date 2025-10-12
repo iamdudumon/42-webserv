@@ -35,7 +35,7 @@ namespace server {
 			void handleEvents();
 			void writeSocket(int, const std::string&);
 			std::string readSocket(int);
-			http::Packet convertPacket(std::string&);
+			http::Packet convertPacket(const std::string&);
 
 		public:
 			explicit Server(const std::vector<config::Config>&);

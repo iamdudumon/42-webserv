@@ -17,7 +17,10 @@
 
 namespace server {
 	Server::Server(const std::vector<config::Config>& configs) :
-		_configs(configs), _socketOption(1), _addressSize(sizeof(_serverAddress)) {
+		_configs(configs),
+		_clientSocket(-1),
+		_socketOption(1),
+		_addressSize(sizeof(_serverAddress)) {
 		_epollManager.init();
 	}
 
@@ -105,7 +108,7 @@ namespace server {
 		writeSocket(socketFd, rawResponse);
 	}
 
-	http::Packet Server::convertPacket(std::string& buffer) {
+	http::Packet Server::convertPacket(const std::string& buffer) {
 		http::Parser httpParser(buffer);
 		httpParser.parse();
 		return httpParser.getResult();

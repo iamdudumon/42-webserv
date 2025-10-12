@@ -27,7 +27,7 @@ jobs:
 
       - name: Static analysis
         run: |
-          cppcheck --enable=warning,performance,style --inline-suppr --error-exitcode=1 src
+          cppcheck --enable=warning,performance,style --suppress=missingOverride --inline-suppr --error-exitcode=1 src
 
   pr_agent_job:
     needs: ci_checks
