@@ -14,6 +14,16 @@ namespace {
 	using config::LocationConfig;
 }
 
+bool Router::isCgiRequest(const std::string& locationPath, const std::string& fsPath) const {
+	if (locationPath != "/cgi-bin" && locationPath != "/cgi-bin/") return false;
+
+	unsigned long dot = fsPath.rfind('.');
+	if (dot == std::string::npos) return false;
+
+	std::string ext = fsPath.substr(dot);
+	return ext == ".py";
+}
+
 bool Router::ensureRequestIsValid(const http::Packet& request, RouteDecision& decision) const {
 	if (!request.isRequest()) {
 		decision.action = RouteDecision::Error;
@@ -106,6 +116,12 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 		return false;
 	}
 
+	if (isCgiRequest(locPrefix, fsPath)) {
+		decision.action = RouteDecision::Cgi;
+		decision.status = http::StatusCode::OK;
+		return true;
+	}
+
 	decision.content_type_hint = utils::byExtension(fsPath);
 	decision.action = RouteDecision::ServeFile;
 	decision.status = http::StatusCode::OK;
@@ -137,8 +153,7 @@ std::string Router::bestLocationPrefix(const Config& server, const std::string& 
 		}
 	}
 	if (bestLen == 0 && !server.getLocation().empty()) {
-		if (server.getLocation().find("/") != server.getLocation().end())
-			return std::string("/");
+		if (server.getLocation().find("/") != server.getLocation().end()) return std::string("/");
 		return server.getLocation().begin()->first;
 	}
 
