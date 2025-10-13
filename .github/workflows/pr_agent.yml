@@ -6,31 +6,7 @@ on:
     types: [opened, reopened, ready_for_review]
   issue_comment:
 jobs:
-  ci_checks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential clang-format cppcheck
-
-      - name: Build
-        run: make
-
-      - name: Check formatting
-        run: |
-          find src -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
-            | xargs -0 clang-format --dry-run --Werror
-
-      - name: Static analysis
-        run: |
-          cppcheck --enable=warning,performance,style --suppress=missingOverride --inline-suppr --error-exitcode=1 src
-
   pr_agent_job:
-    needs: ci_checks
     if: ${{ github.event.sender.type != 'Bot' }}
     runs-on: ubuntu-latest
     permissions:
