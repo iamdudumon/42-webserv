@@ -3,6 +3,7 @@
 #define SERVER_EPOLL_MANAGER_HPP
 
 #include <sys/epoll.h>
+#include <unistd.h>
 
 #include <vector>
 
