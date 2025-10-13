@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>42 WebServer</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h3 {
+            color: #ffeb3b;
+            margin-top: 0;
+        }
+        
+        .cgi-demo {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #ff6b6b;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            margin-top: 40px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #4caf50;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 42 WebServer</h1>
+            <p class="subtitle">고성능 HTTP 서버 with CGI 지원</p>
+            <span class="status">✅ 서버 실행 중</span>
+        </header>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>📁 정적 파일 서빙</h3>
+                <p>HTML, CSS, JS, 이미지 등 정적 파일을 빠르게 제공합니다.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🐍 CGI 지원</h3>
+                <p>Python, PHP, Perl 스크립트를 실행할 수 있습니다.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>⚡ 비동기 처리</h3>
+                <p>epoll을 사용한 고성능 비동기 I/O 처리</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🔧 설정 가능</h3>
+                <p>Nginx 스타일의 설정 파일로 유연한 서버 구성</p>
+            </div>
+        </div>
+
+        <div class="cgi-demo">
+            <h2>🧪 CGI 데모</h2>
+            <p>아래 버튼을 클릭하여 CGI 스크립트를 테스트해보세요!</p>
+            
+            <a href="/cgi-bin/hello.py" class="btn">👋 Hello CGI</a>
+            <a href="/cgi-bin/info.py" class="btn">ℹ️ 서버 정보</a>
+            <a href="/cgi-bin/form.py" class="btn">📝 폼 테스트</a>
+        </div>
+
+        <div class="feature-card">
+            <h3>📊 서버 상태</h3>
+            <ul style="text-align: left;">
+                <li><strong>포트:</strong> 8080, 8081</li>
+                <li><strong>CGI 지원:</strong> Python, PHP, Perl</li>
+                <li><strong>최대 요청 크기:</strong> 20MB</li>
+                <li><strong>메서드:</strong> GET, POST</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 42 WebServer | Made with ❤️ by 42 Seoul</p>
+        <p>현재 시간: <span id="current-time"></span></p>
+    </footer>
+
+    <script>
+        // 현재 시간 표시
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('ko-KR');
+        }
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // 페이지 로드 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card, .cgi-demo');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>
