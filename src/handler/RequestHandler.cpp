@@ -31,7 +31,7 @@ const builder::IBuilder* RequestHandler::selectBuilder(router::RouteDecision::Ac
 	if (it != _builders.end() && it->second) return it->second;
 	return _defaultBuilder;
 }
-// 일반 요청 처리
+
 http::Packet RequestHandler::handle(const http::Packet& req,
 									const std::vector<config::Config>& configs,
 									int localPort) const {
@@ -58,6 +58,10 @@ int RequestHandler::getClientFd(int fd) const {
 
 bool RequestHandler::isCgiProcess(int fd) const {
 	return _cgiManager.isCgiProcess(fd);
+}
+
+bool RequestHandler::isCgiProcessing(int clientFd) const {
+	return _cgiManager.isProcessing(clientFd);
 }
 
 bool RequestHandler::isCgiCompleted(int fd) const {
