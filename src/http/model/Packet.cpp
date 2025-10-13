@@ -5,10 +5,10 @@
 
 namespace http {
 	Packet::Packet(const StartLine& startLine, const Header& header, const Body& body) :
-		_startLine(startLine), _header(header), _body(body), _isRequest(true) {}
+		_startLine(startLine), _statusLine(), _header(header), _body(body), _isRequest(true) {}
 
 	Packet::Packet(const StatusLine& statusLine, const Header& header, const Body& body) :
-		_statusLine(statusLine), _header(header), _body(body), _isRequest(false) {}
+		_startLine(), _statusLine(statusLine), _header(header), _body(body), _isRequest(false) {}
 
 	const Header& Packet::getHeader() const {
 		return _header;

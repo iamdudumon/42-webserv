@@ -18,8 +18,8 @@ namespace http {
 
 			const std::map<std::string, std::string>& getHeaders() const;
 
-			const std::string& get(std::string) const;
-			void set(std::string, std::string);
+			const std::string& get(const std::string&) const;
+			void set(const std::string&, const std::string&);
 	};
 }  // namespace http
 

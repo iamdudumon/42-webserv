@@ -10,7 +10,7 @@
 namespace http {
 	class BodyState : public ParseState {
 		public:
-			BodyState(size_t remain) : _done(false), _remain(remain) {}
+			explicit BodyState(size_t remain) : _done(false), _remain(remain) {}
 
 			virtual void parse(Parser*);
 			virtual void handleNextState(Parser*);
