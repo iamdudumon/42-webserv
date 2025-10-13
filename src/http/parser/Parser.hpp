@@ -19,13 +19,16 @@ namespace http {
 			size_t _pos;
 			Packet* _packet;
 
+			Parser(const Parser&);
+			Parser& operator=(const Parser&);
+
 			friend class PacketLineState;
 			friend class HeaderState;
 			friend class BodyState;
 			friend class DoneState;
 
 		public:
-			Parser(const std::string&);
+			explicit Parser(const std::string&);
 			~Parser();
 
 			void parse();

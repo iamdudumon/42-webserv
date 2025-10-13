@@ -69,7 +69,7 @@ namespace router {
 			size_t q = target.find('?');
 			std::string path = (q == std::string::npos) ? target : target.substr(0, q);
 			size_t hash = path.find('#');
-			if (hash != std::string::npos) path = path.substr(0, hash);
+			if (hash != std::string::npos) path.resize(hash);
 			return path.empty() ? std::string("/") : path;
 		}
 	}  // namespace utils

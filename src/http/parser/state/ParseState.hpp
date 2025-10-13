@@ -7,7 +7,7 @@ namespace http {
 
 	class ParseState {
 		public:
-			virtual ~ParseState() {};
+			virtual ~ParseState() {}
 			virtual void parse(Parser*) = 0;
 			virtual void handleNextState(Parser*) = 0;
 	};

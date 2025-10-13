@@ -13,7 +13,7 @@ http::Packet AutoIndexBuilder::build(const router::RouteDecision& decision, cons
 	ss << "<html><body><h1>Index of " << decision.fs_path << "</h1><ul>";
 	DIR* dp = opendir(decision.fs_path.c_str());
 	if (dp) {
-		dirent* ent;
+		const dirent* ent;
 		while ((ent = readdir(dp)) != NULL) {
 			std::string name = ent->d_name;
 			if (name == "." || name == "..") continue;

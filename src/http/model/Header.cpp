@@ -24,12 +24,12 @@ namespace http {
 		return _headers;
 	}
 
-	const std::string& Header::get(std::string key) const {
+	const std::string& Header::get(const std::string& key) const {
 		std::map<std::string, std::string>::const_iterator it = _headers.find(to_lower(key));
 		return (it != _headers.end()) ? it->second : EMPTY_STRING;
 	}
 
-	void Header::set(std::string key, std::string value) {
+	void Header::set(const std::string& key, const std::string& value) {
 		_headers[to_lower(key)] = value;
 	}
 }  // namespace http
