@@ -20,7 +20,7 @@ namespace handler {
 	namespace cgi {
 		class Builder {
 			private:
-				std::vector<std::string> _env_strings;
+				std::vector<std::string> _envStrings;
 				std::vector<char*> _envp;
 				std::vector<char*> _argv;
 
@@ -30,7 +30,6 @@ namespace handler {
 			public:
 				Builder() {}
 				~Builder() {}
-				// 비동기 처리를 위해 epoll_manager와 cgi_manager 추가 및 반환 타입 void로 변경
 				void build(const router::RouteDecision&, const http::Packet&, server::EpollManager&,
 						   Manager&, int);
 		};
