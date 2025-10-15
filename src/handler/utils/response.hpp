@@ -6,6 +6,7 @@
 
 #include "../../http/Enums.hpp"
 #include "../../http/model/Packet.hpp"
+#include "../../utils/str_utils.hpp"
 
 namespace handler {
 	namespace utils {
@@ -19,6 +20,21 @@ namespace handler {
 			response.addHeader("Content-Type", contentType);
 			if (!body.empty()) response.appendBody(body.c_str(), body.size());
 			return response;
+		}
+
+		inline std::string makeCgiResponse(const std::string& cgiOutput) {
+			return "HTTP/1.1 200 OK\r\n" + cgiOutput;
+		}
+
+		inline std::string makeCgiErrorResponse(http::StatusCode::Value status) {
+			std::string statusLine = "HTTP/1.1 " + int_tostr(status) + " " +
+									 http::StatusCode::to_reasonPhrase(status) + "\r\n";
+			return statusLine +
+				   "\r\n"
+				   "Content-Type: text/plain\r\n"
+				   "Content-Length: 9\r\n"
+				   "\r\n"
+				   "CGI Error";
 		}
 	}  // namespace utils
 }  // namespace handler

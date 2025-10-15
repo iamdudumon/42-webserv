@@ -23,6 +23,7 @@ namespace router {
 			bool validateBodySize(const config::Config&, const http::Packet&, RouteDecision&) const;
 			bool decideResource(const config::Config&, const std::string&, const std::string&,
 								RouteDecision&) const;
+			bool isCgiRequest(const std::string&, const std::string&) const;
 
 		public:
 			Router() {}
