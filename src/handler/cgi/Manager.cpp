@@ -29,7 +29,7 @@ void Manager::registerProcess(pid_t pid, int cgiFd, int clientFd) {
 	_clientToCgi[clientFd] = cgiFd;
 }
 
-void Manager::handleCgiEvent(int cgiFd, server::EpollManager& epoll_manager) {
+void Manager::handleCgiEvent(int cgiFd, server::EpollManager& epollManager) {
 	std::map<int, Process>::iterator it = _activeProcesses.find(cgiFd);
 	if (it == _activeProcesses.end()) {
 		return;
@@ -42,7 +42,7 @@ void Manager::handleCgiEvent(int cgiFd, server::EpollManager& epoll_manager) {
 		process.output.append(buffer);
 	}
 	process.completed = true;
-	epoll_manager.remove(cgiFd);
+	epollManager.remove(cgiFd);
 }
 
 bool Manager::isCgiProcess(int fd) const {

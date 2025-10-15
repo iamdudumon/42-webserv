@@ -22,10 +22,10 @@ namespace handler {
 			return response;
 		}
 
-		// CGI 응답 생성
 		inline std::string makeCgiResponse(const std::string& cgiOutput) {
 			return "HTTP/1.1 200 OK\r\n" + cgiOutput;
 		}
+
 		inline std::string makeCgiErrorResponse(http::StatusCode::Value status) {
 			std::string statusLine = "HTTP/1.1 " + int_tostr(status) + " " +
 									 http::StatusCode::to_reasonPhrase(status) + "\r\n";
