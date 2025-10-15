@@ -3,6 +3,7 @@
 #define SERVER_EPOLL_MANAGER_HPP
 
 #include <sys/epoll.h>
+#include <unistd.h>
 
 #include <vector>
 
@@ -28,6 +29,7 @@ namespace server {
 			const epoll_event& eventAt(int) const;
 			void init();
 			void add(int);
+			void add(int, unsigned int);
 			void remove(int);
 			void wait();
 	};
