@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "../config/model/Config.hpp"
 #include "../handler/RequestHandler.hpp"
 #include "../http/model/Packet.hpp"
+#include "../http/parser/Parser.hpp"
 #include "epoll/manager/EpollManager.hpp"
 
 namespace server {
@@ -27,6 +29,7 @@ namespace server {
 			sockaddr_in _clientAddress;
 			EpollManager _epollManager;
 			handler::RequestHandler _requestHandler;
+			std::map<int, http::Parser*> _parsers;
 
 			void initAddress(int);
 			void initServer();
@@ -35,7 +38,8 @@ namespace server {
 			void handleEvents();
 			void writeSocket(int, const std::string&);
 			std::string readSocket(int);
-			http::Packet convertPacket(const std::string&);
+			void cleanupClient(int);
+			http::Parser* ensureParser(int);
 
 		public:
 			explicit Server(const std::vector<config::Config>&);

@@ -5,6 +5,8 @@
 
 namespace http {
 	void BodyState::parse(Parser* parser) {
+		if (_done) return;
+
 		if (_remain == 0) {
 			_done = true;
 			return;
@@ -14,6 +16,7 @@ namespace http {
 		parser->_packet->appendBody(chunk.data(), chunk.size());
 		_remain = 0;
 		_done = true;
+		parser->_packet->applyBodyLength(parser->_packet->getBody().getData().size());
 	}
 
 	void BodyState::handleNextState(Parser* parser) {

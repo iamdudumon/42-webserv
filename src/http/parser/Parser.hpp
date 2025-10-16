@@ -6,6 +6,7 @@
 
 #include "../model/Packet.hpp"
 #include "./state/BodyState.hpp"
+#include "./state/ChunkedBodyState.hpp"
 #include "./state/DoneState.hpp"
 #include "./state/HeaderState.hpp"
 #include "./state/PacketLineState.hpp"
@@ -18,6 +19,7 @@ namespace http {
 			std::string _rawData;
 			size_t _pos;
 			Packet* _packet;
+			bool _complete;
 
 			Parser(const Parser&);
 			Parser& operator=(const Parser&);
@@ -25,19 +27,22 @@ namespace http {
 			friend class PacketLineState;
 			friend class HeaderState;
 			friend class BodyState;
+			friend class ChunkedBodyState;
 			friend class DoneState;
 
 		public:
-			explicit Parser(const std::string&);
+			Parser();
 			~Parser();
 
 			void parse();
-			Packet getResult();
+			Packet getResult() const;
 			void changeState(ParseState*);
+			void append(const std::string&);
+			bool isComplete() const;
+			std::string tail() const;
 
 			std::string readLine();
 			std::string readBytes(size_t n);
-			size_t remaining() const;
 	};
 }  // namespace http
 

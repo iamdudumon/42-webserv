@@ -3,6 +3,7 @@
 
 #include "../../../utils/str_utils.hpp"
 #include "../exception/ParserException.hpp"
+#include "ChunkedBodyState.hpp"
 
 namespace http {
 	void HeaderState::parse(Parser* parser) {
@@ -33,7 +34,28 @@ namespace http {
 		if (parser->_packet->isRequest() && parser->_packet->getHeader().get("host").empty())
 			throw ParserException("Host header is missing", http::StatusCode::BadRequest);
 
+		std::string transferEncoding = parser->_packet->getHeader().get("Transfer-Encoding");
+		bool isChunked = false;
+		if (!transferEncoding.empty()) {
+			std::string normalized = to_lower(transferEncoding);
+			if (normalized.find("chunked") != std::string::npos)
+				isChunked = true;
+			else
+				throw ParserException("Unsupported Transfer-Encoding",
+									  http::StatusCode::BadRequest);
+		}
+
 		std::string lengthStr = parser->_packet->getHeader().get("Content-Length");
+		if (isChunked && !lengthStr.empty())
+			throw ParserException("Content-Length must not be sent with chunked body",
+								  http::StatusCode::BadRequest);
+
+		if (isChunked) {
+			parser->_packet->applyBodyLength(0);
+			parser->changeState(new ChunkedBodyState());
+			return;
+		}
+
 		size_t contentLength = lengthStr != "" ? str_toint(lengthStr) : 0;
 		http::ContentType::Value contentType =
 			http::ContentType::to_value(parser->_packet->getHeader().get("Content-Type"));
