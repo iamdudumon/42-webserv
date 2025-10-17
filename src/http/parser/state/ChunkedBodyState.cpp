@@ -5,6 +5,7 @@
 
 #include "../../../utils/str_utils.hpp"
 #include "../Parser.hpp"
+#include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
 #include "DoneState.hpp"
 
@@ -40,7 +41,15 @@ namespace http {
 	}
 
 	void ChunkedBodyState::readChunkSize(Parser* parser) {
-		std::string line = parser->readLine();
+		std::string line;
+		try {
+			line = parser->readLine();
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: chunk size truncated",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
 		size_t semicolon = line.find(';');
 		if (semicolon != std::string::npos) line = line.substr(0, semicolon);
 
@@ -64,21 +73,47 @@ namespace http {
 	}
 
 	void ChunkedBodyState::readChunkData(Parser* parser) {
-		std::string data = parser->readBytes(_currentChunkSize);
+		std::string data;
+		try {
+			data = parser->readBytes(_currentChunkSize);
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: Body incomplete",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
 
 		parser->_packet->appendBody(data.data(), data.size());
 		_stage = ReadCRLF;
 	}
 
 	void ChunkedBodyState::readChunkDelimiter(Parser* parser) {
-		if (parser->readBytes(2) != "\r\n")
+		std::string delim;
+		try {
+			delim = parser->readBytes(2);
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: chunk delimiter missing",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
+		if (delim != "\r\n")
 			throw ParserException("Chunk delimiter missing", http::StatusCode::BadRequest);
 
 		_stage = ReadSize;
 	}
 
 	void ChunkedBodyState::readTrailer(Parser* parser) {
-		if (parser->readLine().empty()) {
+		std::string line;
+		try {
+			line = parser->readLine();
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: chunk trailer truncated",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
+		if (line.empty()) {
 			_done = true;
 		}
 	}

@@ -12,7 +12,8 @@ namespace http {
 		_rawData(),
 		_pos(0),
 		_packet(NULL),
-		_complete(false) {}
+		_complete(false),
+		_inputEnded(false) {}
 
 	Parser::~Parser() {
 		delete _currentState;
@@ -43,6 +44,15 @@ namespace http {
 
 	void Parser::append(const std::string& chunk) {
 		_rawData.append(chunk);
+		if (!chunk.empty()) _inputEnded = false;
+	}
+
+	void Parser::markEndOfInput() {
+		_inputEnded = true;
+	}
+
+	bool Parser::inputEnded() const {
+		return _inputEnded;
 	}
 
 	bool Parser::isComplete() const {

@@ -3,24 +3,35 @@
 
 #include <sstream>
 
+#include "../exception/NeedMoreInput.hpp"
+#include "../exception/ParserException.hpp"
+
 namespace http {
 	void PacketLineState::parse(Parser* parser) {
 		if (_done) return;
 
-		std::string line = parser->readLine();
+		std::string line;
+		try {
+			line = parser->readLine();
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: unexpected end of request line",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
 		std::string t1, t2, rest;
 		std::istringstream iss(line);
 		iss >> t1 >> t2;
 		std::getline(iss, rest);
 		if (!rest.empty() && rest[0] == ' ') rest.erase(0, 1);
 
-    if (http::Method::to_value(t1) != http::Method::UNKNOWN_METHOD) {
-        http::StartLine startLine = {http::Method::to_value(t1), t2, rest};
-        parser->_packet = new Packet(startLine, Header(), Body());
-    } else {
-        http::StatusLine statusLine = {t1, http::StatusCode::to_value(t2), rest};
-        parser->_packet = new Packet(statusLine, Header(), Body());
-    }
+		if (http::Method::to_value(t1) != http::Method::UNKNOWN_METHOD) {
+			http::StartLine startLine = {http::Method::to_value(t1), t2, rest};
+			parser->_packet = new Packet(startLine, Header(), Body());
+		} else {
+			http::StatusLine statusLine = {t1, http::StatusCode::to_value(t2), rest};
+			parser->_packet = new Packet(statusLine, Header(), Body());
+		}
 		_done = true;
 	}
 

@@ -1,15 +1,27 @@
 // HaederState.cpp
 #include "HeaderState.hpp"
 
+#include <cctype>
+
 #include "../../../utils/str_utils.hpp"
+#include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
 #include "ChunkedBodyState.hpp"
 
 namespace http {
 	void HeaderState::parse(Parser* parser) {
 		if (_done) return;
+
 		while (true) {
-			std::string line = parser->readLine();
+			std::string line;
+			try {
+				line = parser->readLine();
+			} catch (const NeedMoreInput&) {
+				if (parser->inputEnded())
+					throw ParserException("Malformed request: header line truncated",
+										  http::StatusCode::BadRequest);
+				throw;
+			}
 			if (line.empty()) {
 				_done = true;
 				return;
@@ -56,7 +68,15 @@ namespace http {
 			return;
 		}
 
-		size_t contentLength = lengthStr != "" ? str_toint(lengthStr) : 0;
+		size_t contentLength = 0;
+		if (!lengthStr.empty()) {
+			for (size_t i = 0; i < lengthStr.size(); ++i) {
+				if (!isdigit(static_cast<unsigned char>(lengthStr[i])))
+					throw ParserException("Invalid Content-Length value",
+										  http::StatusCode::BadRequest);
+			}
+			contentLength = str_toint(lengthStr);
+		}
 		http::ContentType::Value contentType =
 			http::ContentType::to_value(parser->_packet->getHeader().get("Content-Type"));
 

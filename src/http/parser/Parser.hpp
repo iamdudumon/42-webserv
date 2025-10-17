@@ -20,6 +20,7 @@ namespace http {
 			size_t _pos;
 			Packet* _packet;
 			bool _complete;
+			bool _inputEnded;
 
 			Parser(const Parser&);
 			Parser& operator=(const Parser&);
@@ -34,15 +35,18 @@ namespace http {
 			Parser();
 			~Parser();
 
-			void parse();
 			Packet getResult() const;
-			void changeState(ParseState*);
-			void append(const std::string&);
 			bool isComplete() const;
+			bool inputEnded() const;
 			std::string tail() const;
+			void markEndOfInput();
+
+			void parse();
+			void append(const std::string&);
+			void changeState(ParseState*);
 
 			std::string readLine();
-			std::string readBytes(size_t n);
+			std::string readBytes(size_t);
 	};
 }  // namespace http
 

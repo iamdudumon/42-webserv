@@ -100,14 +100,11 @@ void Server::handleEvents() {
 
 			std::string buffer = readSocket(clientFd);
 			bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
-			if (buffer.empty() && disconnected) {
-				cleanupClient(clientFd);
-				continue;
-			}
-			if (buffer.empty() && !disconnected) continue;
 
 			http::Parser* parser = ensureParser(clientFd);
 			if (!buffer.empty()) parser->append(buffer);
+			if (disconnected) parser->markEndOfInput();
+			if (buffer.empty() && !disconnected) continue;
 
 			bool keepParsing = true;
 			bool alreadyCleaned = false;
