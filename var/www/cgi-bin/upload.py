@@ -6,7 +6,7 @@ import cgitb
 
 cgitb.enable()
 
-UPLOAD_DIR = "/home/jinsecho/Desktop/fork-42-webserv/var/www/uploads"
+UPLOAD_DIR = "./var/www/uploads"
 
 # 디렉터리 생성
 os.makedirs(UPLOAD_DIR, exist_ok=True)
