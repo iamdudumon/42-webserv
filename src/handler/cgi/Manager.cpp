@@ -60,11 +60,11 @@ bool Manager::isCompleted(int fd) const {
 	}
 
 	int cgiFd = it->second;
-	std::map<int, Process>::const_iterator cgi_it = _activeProcesses.find(cgiFd);
-	if (cgi_it == _activeProcesses.end()) {
+	std::map<int, Process>::const_iterator cgiIt = _activeProcesses.find(cgiFd);
+	if (cgiIt == _activeProcesses.end()) {
 		return false;
 	}
-	return cgi_it->second.completed;
+	return cgiIt->second.completed;
 }
 
 void Manager::removeCgiProcess(int clientFd) {
@@ -73,8 +73,8 @@ void Manager::removeCgiProcess(int clientFd) {
 		int cgiFd = it->second;
 		_clientToCgi.erase(it);
 
-		std::map<int, Process>::iterator proc_it = _activeProcesses.find(cgiFd);
-		if (proc_it != _activeProcesses.end()) _activeProcesses.erase(proc_it);
+		std::map<int, Process>::iterator procIt = _activeProcesses.find(cgiFd);
+		if (procIt != _activeProcesses.end()) _activeProcesses.erase(procIt);
 	}
 }
 
@@ -83,11 +83,11 @@ std::string Manager::getResponse(int clientFd) {
 	if (it == _clientToCgi.end()) throw Exception();
 
 	int cgiFd = it->second;
-	std::map<int, Process>::iterator proc_it = _activeProcesses.find(cgiFd);
-	if (proc_it == _activeProcesses.end()) throw Exception();
+	std::map<int, Process>::iterator procIt = _activeProcesses.find(cgiFd);
+	if (procIt == _activeProcesses.end()) throw Exception();
 
-	std::string output = proc_it->second.output;
-	_activeProcesses.erase(proc_it);
+	std::string output = procIt->second.output;
+	_activeProcesses.erase(procIt);
 	_clientToCgi.erase(it);
 	if (output.empty()) throw Exception();
 
