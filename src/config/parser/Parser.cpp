@@ -4,7 +4,7 @@
 #include <cctype>
 #include <stdexcept>
 
-#include "../../file/FileReader.hpp"
+#include "../../utils/file_utils.hpp"
 #include "../Defaults.hpp"
 #include "../exception/Exception.hpp"
 #include "../validator/Validator.hpp"
@@ -198,7 +198,7 @@ namespace config {
 	}
 
 	void Parser::loadFromFile(const char* filePath) {
-		const FileInfo fileInfo = FileReader::readFile(filePath ? filePath : defaults::PATH());
+		const FileInfo fileInfo = readFile(filePath ? filePath : defaults::PATH());
 		if (fileInfo.error) throw Exception("[Error] confFile open failed");
 		parse(tokenize(fileInfo.content));
 		Validator::validate(_configs);

@@ -1,6 +1,6 @@
-// FileInfo.hpp
-#ifndef FILE_INFO_HPP
-#define FILE_INFO_HPP
+// file_utils.hpp
+#ifndef FILE_UTILS_HPP
+#define FILE_UTILS_HPP
 
 #include <string>
 
@@ -12,5 +12,7 @@ struct FileInfo {
 			READ_ERROR
 		} error;
 };
+
+FileInfo readFile(const char*);
 
 #endif
