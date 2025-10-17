@@ -75,9 +75,9 @@ void Builder::build(const router::RouteDecision& decision, const http::Packet& r
 
 	// 필요시 POST 데이터를 CGI로 전송
 	if (request.getStartLine().method == http::Method::POST) {
-		const std::vector<unsigned char>& body_data = request.getBody().getData();
-		if (!body_data.empty()) {
-			write(stdinPipe[1], body_data.data(), body_data.size());
+		const std::vector<unsigned char>& bodyData = request.getBody().getData();
+		if (!bodyData.empty()) {
+			write(stdinPipe[1], bodyData.data(), bodyData.size());
 		}
 	}
 	close(stdinPipe[1]);
