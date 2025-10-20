@@ -20,15 +20,16 @@ namespace router {
 
 			http::StatusCode::Value status;
 			const config::Config* server;
-			std::string location_path;
+			std::string locationPath;
+			std::string queryString;
 
-			std::string fs_root;
-			std::string fs_path;
-			std::string index_used;
-			std::string content_type_hint;
+			std::string fsRoot;
+			std::string fsPath;
+			std::string indexUsed;
+			std::string contentTypeHint;
 
-			std::vector<std::string> allow_methods;
-			std::string redirect_location;
+			std::vector<std::string> allowMethods;
+			std::string redirectLocation;
 
 			RouteDecision() :
 				action(Error), status(http::StatusCode::InternalServerError), server(NULL) {}

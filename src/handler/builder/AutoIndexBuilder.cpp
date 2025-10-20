@@ -10,8 +10,8 @@ using namespace handler::builder;
 http::Packet AutoIndexBuilder::build(const router::RouteDecision& decision, const http::Packet&,
 									 const std::vector<config::Config>&) const {
 	std::ostringstream ss;
-	ss << "<html><body><h1>Index of " << decision.fs_path << "</h1><ul>";
-	DIR* dp = opendir(decision.fs_path.c_str());
+	ss << "<html><body><h1>Index of " << decision.fsPath << "</h1><ul>";
+	DIR* dp = opendir(decision.fsPath.c_str());
 	if (dp) {
 		const dirent* ent;
 		while ((ent = readdir(dp)) != NULL) {
