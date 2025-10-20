@@ -14,25 +14,6 @@
 
 namespace http {
 	class Parser {
-		public:
-			struct Result {
-					enum Status {
-						Incomplete,
-						Completed,
-						Error
-					} status;
-					http::Packet packet;
-					http::StatusCode::Value errorCode;
-					std::string errorMessage;
-
-					Result() :
-						status(Incomplete),
-						packet(http::StatusLine(), http::Header(), http::Body()),
-						errorCode(http::StatusCode::BadRequest),
-						errorMessage(
-							http::StatusCode::to_reasonPhrase(http::StatusCode::BadRequest)) {}
-			};
-
 		private:
 			ParseState* _currentState;
 			std::string _rawData;
@@ -51,16 +32,37 @@ namespace http {
 			friend class DoneState;
 
 		public:
+			struct Result {
+					enum Status {
+						Incomplete,
+						Completed,
+						Error
+					} status;
+					http::Packet packet;
+					std::string leftover;
+					http::StatusCode::Value errorCode;
+					std::string errorMessage;
+					bool endOfInput;
+
+					Result() :
+						status(Incomplete),
+						packet(http::StatusLine(), http::Header(), http::Body()),
+						errorCode(http::StatusCode::BadRequest),
+						errorMessage(
+							http::StatusCode::to_reasonPhrase(http::StatusCode::BadRequest)),
+						endOfInput(false) {}
+			};
+
 			Parser();
 			~Parser();
 
 			bool inputEnded() const;
-			std::string tail() const;
 			void markEndOfInput();
 
 			Result parse();
 			void append(const std::string&);
 			void changeState(ParseState*);
+			void reset();
 
 			std::string readLine();
 			std::string readBytes(size_t);

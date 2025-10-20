@@ -131,12 +131,8 @@ void Server::handleEvents() {
 				}
 				case http::Parser::Result::Completed: {
 					http::Packet httpRequest = parseResult.packet;
-					std::string remainder = parser->tail();
-					bool ended = parser->inputEnded();
-
-					delete parser;
-					_parsers.erase(clientFd);
-					parser = NULL;
+					std::string remainder = parseResult.leftover;
+					bool ended = parseResult.endOfInput;
 
 					int localPort = 0;
 					sockaddr_in addr;
@@ -160,7 +156,6 @@ void Server::handleEvents() {
 					writePacket(clientFd, httpResponse);
 
 					if (!remainder.empty()) {
-						parser = ensureParser(clientFd);
 						parser->append(remainder);
 						if (ended) parser->markEndOfInput();
 						continue;

@@ -52,6 +52,9 @@ namespace http {
 		if (_complete) {
 			outcome.status = Result::Completed;
 			if (_packet) outcome.packet = *_packet;
+			if (_pos < _rawData.size()) outcome.leftover = _rawData.substr(_pos);
+			outcome.endOfInput = _inputEnded;
+			reset();
 			return outcome;
 		}
 		outcome.status = Result::Incomplete;
@@ -76,9 +79,17 @@ namespace http {
 		return _inputEnded;
 	}
 
-	std::string Parser::tail() const {
-		if (_pos >= _rawData.size()) return std::string();
-		return _rawData.substr(_pos);
+	void Parser::reset() {
+		delete _currentState;
+		_currentState = new PacketLineState();
+		if (_packet) {
+			delete _packet;
+			_packet = NULL;
+		}
+		_rawData.clear();
+		_pos = 0;
+		_complete = false;
+		_inputEnded = false;
 	}
 
 	std::string Parser::readLine() {
