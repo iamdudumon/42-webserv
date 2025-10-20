@@ -14,6 +14,14 @@ namespace {
 	using config::LocationConfig;
 }
 
+std::string Router::parseQueryString(const std::string& uri) const {
+	size_t qpos = uri.find('?');
+	if (qpos != std::string::npos) {
+		return uri.substr(qpos + 1);
+	}
+	return "";
+}
+
 bool Router::isCgiRequest(const std::string& locationPath, const std::string& fsPath) const {
 	if (locationPath != "/cgi-bin" && locationPath != "/cgi-bin/") return false;
 
@@ -118,7 +126,7 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 
 	if (isCgiRequest(locPrefix, fsPath)) {
 		decision.action = RouteDecision::Cgi;
-		//decision.status = http::StatusCode::OK;
+		// decision.status = http::StatusCode::OK;
 		return true;
 	}
 
@@ -177,6 +185,8 @@ RouteDecision Router::route(const http::Packet& request, const std::vector<Confi
 	std::string locPrefix;
 
 	resolveLocation(*server, request, normPath, locPrefix, decision);
+
+	decision.queryString = parseQueryString(request.getStartLine().target);	 // 쿼리스트링 추출
 
 	if (!validateMethod(*server, request, locPrefix, decision)) return decision;
 	if (!validateBodySize(*server, request, decision)) return decision;
