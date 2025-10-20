@@ -8,7 +8,7 @@ print("Content-Type: application/json")
 print()
 
 # 업로드 디렉토리
-UPLOAD_DIR = "var/www/uploads"
+UPLOAD_DIR = "./var/www/uploads"
 
 try:
     files_list = []
