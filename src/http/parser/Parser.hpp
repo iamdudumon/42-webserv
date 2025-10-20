@@ -14,6 +14,25 @@
 
 namespace http {
 	class Parser {
+		public:
+			struct Result {
+					enum Status {
+						Incomplete,
+						Completed,
+						Error
+					} status;
+					http::Packet packet;
+					http::StatusCode::Value errorCode;
+					std::string errorMessage;
+
+					Result() :
+						status(Incomplete),
+						packet(http::StatusLine(), http::Header(), http::Body()),
+						errorCode(http::StatusCode::BadRequest),
+						errorMessage(
+							http::StatusCode::to_reasonPhrase(http::StatusCode::BadRequest)) {}
+			};
+
 		private:
 			ParseState* _currentState;
 			std::string _rawData;
@@ -35,13 +54,11 @@ namespace http {
 			Parser();
 			~Parser();
 
-			Packet getResult() const;
-			bool isComplete() const;
 			bool inputEnded() const;
 			std::string tail() const;
 			void markEndOfInput();
 
-			void parse();
+			Result parse();
 			void append(const std::string&);
 			void changeState(ParseState*);
 

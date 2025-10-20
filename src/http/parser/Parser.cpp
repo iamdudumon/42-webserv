@@ -20,21 +20,42 @@ namespace http {
 		if (_packet) delete _packet;
 	}
 
-	void Parser::parse() {
-		if (_complete) return;
+	Parser::Result Parser::parse() {
+		Result outcome;
 
-		while (true) {
-			_currentState->parse(this);
-			_currentState->handleNextState(this);
-			if (dynamic_cast<DoneState*>(_currentState)) {
-				_complete = true;
-				return;
+		try {
+			if (!_complete) {
+				while (true) {
+					_currentState->parse(this);
+					_currentState->handleNextState(this);
+					if (dynamic_cast<DoneState*>(_currentState)) {
+						_complete = true;
+						break;
+					}
+				}
 			}
+		} catch (const NeedMoreInput&) {
+			if (_inputEnded) {
+				outcome.status = Result::Error;
+				outcome.errorCode = http::StatusCode::BadRequest;
+				outcome.errorMessage = "Malformed request: message incomplete";
+			} else
+				outcome.status = Result::Incomplete;
+			return outcome;
+		} catch (const ParserException& e) {
+			outcome.status = Result::Error;
+			outcome.errorCode = e.getStatusCode();
+			outcome.errorMessage = e.what();
+			return outcome;
 		}
-	}
 
-	Packet Parser::getResult() const {
-		return *_packet;
+		if (_complete) {
+			outcome.status = Result::Completed;
+			if (_packet) outcome.packet = *_packet;
+			return outcome;
+		}
+		outcome.status = Result::Incomplete;
+		return outcome;
 	}
 
 	void Parser::changeState(ParseState* newState) {
@@ -53,10 +74,6 @@ namespace http {
 
 	bool Parser::inputEnded() const {
 		return _inputEnded;
-	}
-
-	bool Parser::isComplete() const {
-		return _complete;
 	}
 
 	std::string Parser::tail() const {

@@ -93,79 +93,90 @@ void Server::handleEvents() {
 				socket::accept(event.data.fd, reinterpret_cast<sockaddr*>(&_clientAddress),
 							   reinterpret_cast<socklen_t*>(&_addressSize));
 			_epollManager.add(_clientSocket);
-		} else {
-			int clientFd = event.data.fd;
+			continue;
+		}
 
-			if (_requestHandler.isCgiProcessing(clientFd)) continue;
+		int clientFd = event.data.fd;
+		if (_requestHandler.isCgiProcessing(clientFd)) continue;
 
-			std::string buffer = readSocket(clientFd);
-			bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
+		std::string buffer = readSocket(clientFd);
+		bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
+		http::Parser* parser = ensureParser(clientFd);
 
-			http::Parser* parser = ensureParser(clientFd);
-			if (!buffer.empty()) parser->append(buffer);
-			if (disconnected) parser->markEndOfInput();
-			if (buffer.empty() && !disconnected) continue;
+		if (!buffer.empty()) parser->append(buffer);
+		if (disconnected) parser->markEndOfInput();
+		if (buffer.empty() && !disconnected) continue;
 
-			bool keepParsing = true;
-			bool alreadyCleaned = false;
-			while (keepParsing) {
-				try {
-					parser->parse();
-				} catch (const http::NeedMoreInput&) {
+		bool alreadyCleaned = false;
+		while (true) {
+			http::Parser::Result parseResult = parser->parse();
+
+			switch (parseResult.status) {
+				case http::Parser::Result::Incomplete:
 					break;
-				} catch (const http::ParserException& e) {
+				case http::Parser::Result::Error: {
+					const std::string& body =
+						parseResult.errorMessage.empty()
+							? http::StatusCode::to_reasonPhrase(parseResult.errorCode)
+							: parseResult.errorMessage;
 					http::Packet errorPacket = handler::utils::makePlainResponse(
-						e.getStatusCode(), e.what(),
+						parseResult.errorCode, body,
 						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+
 					writePacket(clientFd, errorPacket);
 					cleanupClient(clientFd);
 					parser = NULL;
-					keepParsing = false;
 					alreadyCleaned = true;
 					break;
-				} catch (const std::exception&) {
-					cleanupClient(clientFd);
+				}
+				case http::Parser::Result::Completed: {
+					http::Packet httpRequest = parseResult.packet;
+					std::string remainder = parser->tail();
+					bool ended = parser->inputEnded();
+
+					delete parser;
+					_parsers.erase(clientFd);
 					parser = NULL;
-					keepParsing = false;
-					alreadyCleaned = true;
-					break;
-				}
 
-				http::Packet httpRequest = parser->getResult();
-				std::string remainder = parser->tail();
-				delete parser;
-				_parsers.erase(clientFd);
-				parser = NULL;
+					int localPort = 0;
+					sockaddr_in addr;
+					socklen_t len = sizeof(addr);
+					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
+						localPort = ntohs(addr.sin_port);
+					}
 
-				int localPort = 0;
-				sockaddr_in addr;
-				socklen_t len = sizeof(addr);
-				if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
-					localPort = ntohs(addr.sin_port);
-				}
+					router::RouteDecision decision =
+						_requestHandler.route(httpRequest, _configs, localPort);
+					if (decision.action == router::RouteDecision::Cgi) {
+						_requestHandler.handleCgi(httpRequest, _configs, localPort, clientFd,
+												  _epollManager);
+						if (ended) cleanupClient(clientFd);
+						alreadyCleaned = true;
+						break;
+					}
 
-				router::RouteDecision decision =
-					_requestHandler.route(httpRequest, _configs, localPort);
-				if (decision.action == router::RouteDecision::Cgi) {
-					_requestHandler.handleCgi(httpRequest, _configs, localPort, clientFd,
-											  _epollManager);
-					keepParsing = false;
-				} else {
 					http::Packet httpResponse =
 						_requestHandler.handle(httpRequest, _configs, localPort);
 					writePacket(clientFd, httpResponse);
-					keepParsing = false;
-				}
 
-				if (!remainder.empty()) {
-					parser = ensureParser(clientFd);
-					parser->append(remainder);
-					keepParsing = true;
+					if (!remainder.empty()) {
+						parser = ensureParser(clientFd);
+						parser->append(remainder);
+						if (ended) parser->markEndOfInput();
+						continue;
+					}
+					if (ended) {
+						cleanupClient(clientFd);
+						alreadyCleaned = true;
+					}
+					break;
 				}
 			}
-
-			if (disconnected && !alreadyCleaned) cleanupClient(clientFd);
+			break;
 		}
+
+		if (alreadyCleaned) continue;
+		if (disconnected) cleanupClient(clientFd);
 	}
 }
 
