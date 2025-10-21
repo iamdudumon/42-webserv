@@ -80,16 +80,11 @@ void Manager::removeCgiProcess(int clientFd) {
 
 std::string Manager::getResponse(int clientFd) {
 	std::map<int, int>::iterator it = _clientToCgi.find(clientFd);
-	if (it == _clientToCgi.end()) throw Exception();
-
 	int cgiFd = it->second;
 	std::map<int, Process>::iterator procIt = _activeProcesses.find(cgiFd);
-	if (procIt == _activeProcesses.end()) throw Exception();
-
 	std::string output = procIt->second.output;
+	if (output.empty()) throw Exception();
 	_activeProcesses.erase(procIt);
 	_clientToCgi.erase(it);
-	if (output.empty()) throw Exception();
-
 	return output;
 }

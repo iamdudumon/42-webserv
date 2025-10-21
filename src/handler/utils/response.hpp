@@ -22,11 +22,7 @@ namespace handler {
 			return response;
 		}
 
-		inline std::string makeCgiResponse(const std::string& cgiOutput) {
-			return "HTTP/1.1 200 OK\r\n" + cgiOutput;
-		}
-
-		inline std::string makeCgiErrorResponse(http::StatusCode::Value status) {
+		inline std::string makeErrorResponse(http::StatusCode::Value status) {
 			std::string statusLine = "HTTP/1.1 " + int_tostr(status) + " " +
 									 http::StatusCode::to_reasonPhrase(status) + "\r\n";
 			return statusLine +
@@ -35,6 +31,30 @@ namespace handler {
 				   "Content-Length: 9\r\n"
 				   "\r\n"
 				   "CGI Error";
+		}
+
+		inline std::string makeCgiResponse(
+			std::string& cgiOutput,
+			http::StatusCode::Value defaultStatusCode = http::StatusCode::OK) {
+			size_t headerEnd = cgiOutput.find("\r\n\r\n");
+			std::string httpHeader;
+			if (headerEnd != std::string::npos) {
+				httpHeader = cgiOutput.substr(0, headerEnd);
+			}
+			std::string statusLine;
+			size_t statusPos = httpHeader.find("Status: ");
+			if (statusPos != std::string::npos) {
+				size_t lineEnd = httpHeader.find("\r\n", statusPos);
+				std::string statusStr = httpHeader.substr(statusPos + 8, lineEnd - (statusPos + 8));
+				http::StatusCode::Value statusCode =
+					static_cast<http::StatusCode::Value>(str_toint(statusStr));
+				cgiOutput.erase(0, lineEnd + 2);  // Remove status line from CGI output
+				return makeErrorResponse(statusCode);
+			} else {
+				statusLine = "HTTP/1.1 " + int_tostr(defaultStatusCode) + " " +
+							 http::StatusCode::to_reasonPhrase(defaultStatusCode) + "\r\n";
+			}
+			return statusLine + cgiOutput;
 		}
 	}  // namespace utils
 }  // namespace handler

@@ -4,12 +4,13 @@ import json
 import sys
 from urllib.parse import parse_qs
 
-# CGI 헤더
-print("Content-Type: application/json")
-print()
-
-# 업로드 디렉토리
 UPLOAD_DIR = "./var/www/uploads"
+
+def print_header(status=None):
+    if status:
+        print(f"Status: {status}")
+    print("Content-Type: application/json")
+    print()
 
 try:
     # QUERY_STRING에서 filename 추출
@@ -17,29 +18,29 @@ try:
     params = parse_qs(query_string)
     filename = params.get('filename', [''])[0]
 
+    # 입력값 검증
     if not filename:
-        raise ValueError("파일명이 제공되지 않았습니다")
+        print_header("400 Bad Request")
+        print(json.dumps({"success": False, "error": "파일명이 제공되지 않았습니다"}, ensure_ascii=False))
+        sys.exit(0)
 
-    # 경로 조작 방지 (보안)
     if '..' in filename or '/' in filename:
-        raise ValueError("잘못된 파일명입니다")
+        print_header("400 Bad Request")
+        print(json.dumps({"success": False, "error": "잘못된 파일명입니다"}, ensure_ascii=False))
+        sys.exit(0)
 
     filepath = os.path.join(UPLOAD_DIR, filename)
 
-    if os.path.exists(filepath) and os.path.isfile(filepath):
-        os.remove(filepath)
-        response = {
-            "success": True,
-            "message": f"{filename} 파일이 삭제되었습니다"
-        }
-    else:
-        raise FileNotFoundError(f"{filename} 파일을 찾을 수 없습니다")
+    if not os.path.exists(filepath) or not os.path.isfile(filepath):
+        print_header("404 Not Found")
+        print(json.dumps({"success": False, "error": f"{filename} 파일을 찾을 수 없습니다"}, ensure_ascii=False))
+        sys.exit(0)
 
-    print(json.dumps(response, ensure_ascii=False))
+    # 정상 삭제
+    os.remove(filepath)
+    print_header()  # Status 헤더 없이 Content-Type만 출력 (200 OK)
+    print(json.dumps({"success": True, "message": f"{filename} 파일이 삭제되었습니다"}, ensure_ascii=False))
 
 except Exception as e:
-    response = {
-        "success": False,
-        "error": str(e)
-    }
-    print(json.dumps(response, ensure_ascii=False))
+    print_header("500 Internal Server Error")
+    print(json.dumps({"success": False, "error": str(e)}, ensure_ascii=False))
