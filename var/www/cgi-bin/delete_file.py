@@ -8,9 +8,9 @@ UPLOAD_DIR = "./var/www/uploads"
 
 def print_header(status=None):
     if status:
-        print(f"Status: {status}")
-    print("Content-Type: application/json")
-    print()
+        print(f"Status: {status}\r")
+    print("Content-Type: application/json\r")
+    print("\r")
 
 method = os.environ.get('REQUEST_METHOD', '')
 if method != 'DELETE':

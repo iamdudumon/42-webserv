@@ -11,9 +11,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def print_header(status=None):
     if status:
-        print(f"Status: {status}")
-    print("Content-Type: application/json")
-    print()
+        print(f"Status: {status}\r")
+    print("Content-Type: application/json\r")
+    print("\r")
 
 def is_safe_filename(filename):
     if not filename or filename.startswith('.'):

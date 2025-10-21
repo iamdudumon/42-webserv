@@ -77,7 +77,7 @@ std::string RequestHandler::getCgiResponse(int fd) {
 		std::string cgiOutput = _cgiManager.getResponse(fd);
 		return utils::makeCgiResponse(cgiOutput);
 	} catch (...) {
-		return utils::makeErrorResponse(http::StatusCode::InternalServerError);
+		throw;
 	}
 }
 

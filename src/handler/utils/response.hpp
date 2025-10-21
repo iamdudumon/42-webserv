@@ -2,6 +2,9 @@
 #ifndef HANDLER_UTILS_RESPONSE_HPP
 #define HANDLER_UTILS_RESPONSE_HPP
 
+#include <iostream>
+using namespace std;
+
 #include <string>
 
 #include "../../http/Enums.hpp"
@@ -22,17 +25,6 @@ namespace handler {
 			return response;
 		}
 
-		inline std::string makeErrorResponse(http::StatusCode::Value status) {
-			std::string statusLine = "HTTP/1.1 " + int_tostr(status) + " " +
-									 http::StatusCode::to_reasonPhrase(status) + "\r\n";
-			return statusLine +
-				   "\r\n"
-				   "Content-Type: text/plain\r\n"
-				   "Content-Length: 9\r\n"
-				   "\r\n"
-				   "CGI Error";
-		}
-
 		inline std::string makeCgiResponse(
 			std::string& cgiOutput,
 			http::StatusCode::Value defaultStatusCode = http::StatusCode::OK) {
@@ -48,8 +40,9 @@ namespace handler {
 				std::string statusStr = httpHeader.substr(statusPos + 8, lineEnd - (statusPos + 8));
 				http::StatusCode::Value statusCode =
 					static_cast<http::StatusCode::Value>(str_toint(statusStr));
-				cgiOutput.erase(0, lineEnd + 2);  // Remove status line from CGI output
-				return makeErrorResponse(statusCode);
+				cgiOutput.erase(0, lineEnd + 2);
+				statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
+							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
 			} else {
 				statusLine = "HTTP/1.1 " + int_tostr(defaultStatusCode) + " " +
 							 http::StatusCode::to_reasonPhrase(defaultStatusCode) + "\r\n";
