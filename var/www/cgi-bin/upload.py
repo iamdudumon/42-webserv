@@ -20,7 +20,7 @@ def is_safe_filename(filename):
         return False
     if '..' in filename or '/' in filename or '\\' in filename:
         return False
-	return True
+    return True
 
 method = os.environ.get('REQUEST_METHOD', 'GET').upper()
 if method != 'POST':
@@ -41,7 +41,6 @@ try:
         print('{"success": false, "error": "유효한 파일명이 아닙니다"}')
         sys.exit(0)
     
-    # 안전한 파일명 추출
     filename = os.path.basename(fileitem.filename)    
     if not is_safe_filename(filename):
         print_header("400 Bad Request")
