@@ -12,6 +12,12 @@ def print_header(status=None):
     print("Content-Type: application/json")
     print()
 
+method = os.environ.get('REQUEST_METHOD', '')
+if method != 'DELETE':
+	print_header("405 Method Not Allowed")
+	print(json.dumps({"success": False, "error": "DELETE 메소드만 허용됩니다"}, ensure_ascii=False))
+	sys.exit(0)
+
 try:
     # QUERY_STRING에서 filename 추출
     query_string = os.environ.get('QUERY_STRING', '')

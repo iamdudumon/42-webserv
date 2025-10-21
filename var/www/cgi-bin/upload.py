@@ -12,39 +12,55 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def print_header(status=None):
     if status:
         print(f"Status: {status}")
-    print("Content-Type: text/html")
+    print("Content-Type: application/json")
     print()
+
+def is_safe_filename(filename):
+    if not filename or filename.startswith('.'):
+        return False
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return False
+	return True
+
+method = os.environ.get('REQUEST_METHOD', 'GET').upper()
+if method != 'POST':
+    print_header("405 Method Not Allowed")
+    print('{"success": false, "error": "POST 메소드만 허용됩니다"}')
+    sys.exit(0)
 
 try:
     form = cgi.FieldStorage()
-    
-    # 정상 처리
-    if "file" in form:
-        file_item = form["file"]
-        if file_item.filename:
-            filename = os.path.basename(file_item.filename)
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            data = file_item.file.read()
-            with open(filepath, "wb") as f:
-                f.write(data)
-            print_header()  # Status 헤더 없이 Content-Type만 출력
-            print("<html><body>")
-            print(f"<h2>✅ 파일 '{filename}' 업로드 성공!</h2>")
-            print(f"<p>경로: {filepath}</p>")
-            print(f"<p>크기: {os.path.getsize(filepath)} bytes</p>")
-            print("</body></html>")
-        else:
-            print_header("400 Bad Request")
-            print("<html><body><h2>❌ 파일명이 없습니다</h2></body></html>")
-    else:
+    if "file" not in form:
         print_header("400 Bad Request")
-        print("<html><body><h2>❌ 'file' 필드가 없습니다</h2></body></html>")
+        print('{"success": false, "error": "파일이 없습니다"}')
+        sys.exit(0)
+    
+    fileitem = form["file"]
+    if not fileitem.filename:
+        print_header("400 Bad Request")
+        print('{"success": false, "error": "유효한 파일명이 아닙니다"}')
+        sys.exit(0)
+    
+    # 안전한 파일명 추출
+    filename = os.path.basename(fileitem.filename)    
+    if not is_safe_filename(filename):
+        print_header("400 Bad Request")
+        print('{"success": false, "error": "허용되지 않는 파일 형식입니다"}')
+        sys.exit(0)
+    
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(filepath):
+        print_header("409 Conflict")
+        print('{"success": false, "error": "이미 존재하는 파일명입니다"}')
+        sys.exit(0)
+    
+    # 파일 저장
+    with open(filepath, 'wb') as f:
+        f.write(fileitem.file.read())
+    
+    print_header()
+    print(f'{{"success": true, "message": "파일이 업로드되었습니다", "filename": "{filename}"}}')
+
 except Exception as e:
     print_header("500 Internal Server Error")
-    print("<html><body>")
-    print(f"<h2>❌ 에러: {e}</h2>")
-    import traceback
-    print("<pre>")
-    traceback.print_exc()
-    print("</pre>")
-    print("</body></html>")
+    print(f'{{"success": false, "error": "서버 오류가 발생했습니다"}}')

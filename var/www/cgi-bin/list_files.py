@@ -11,6 +11,12 @@ def print_header(status=None):
     print("Content-Type: application/json")
     print()
 
+method = os.environ.get('REQUEST_METHOD', '')
+if method != 'GET':
+	print_header("405 Method Not Allowed")
+	print(json.dumps({"success": False, "error": "GET 메소드만 허용됩니다"}, ensure_ascii=False))
+	sys.exit(0)
+
 try:
     files_list = []
     total_size = 0
