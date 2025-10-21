@@ -1,0 +1,28 @@
+<!-- errors/403.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>403 Forbidden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Inter:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background: #fff; min-height: 100vh; margin: 0; font-family: 'Noto Sans KR', 'Inter', Arial, sans-serif; display: flex; align-items: center; justify-content: center; }
+        .error-card { background: #fff; border-radius: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); padding: 48px 40px 40px 40px; max-width: 420px; width: 100%; text-align: center; }
+    .error-code { font-size: 6rem; font-weight: 900; color: #e53935; margin-bottom: 0.2em; } /* Strong Red (from 500) */
+    .error-icon { font-size: 3rem; margin-bottom: 10px; color: #e53935; } /* Strong Red (from 500) */
+        .error-title { font-size: 2.1rem; font-weight: 700; color: #222; margin-bottom: 12px; }
+        .error-message { font-size: 1.13rem; color: #555; margin-bottom: 28px; line-height: 1.7; }
+        .home-link { display: inline-block; margin-top: 8px; padding: 12px 36px; background: linear-gradient(90deg, #36d1c4 0%, #5b86e5 100%); color: #fff; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 1.08rem; }
+        .home-link:hover { background: linear-gradient(90deg, #5b86e5 0%, #36d1c4 100%); }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+    <span class="error-icon">🚫</span>
+        <div class="error-code">403</div>
+        <div class="error-title">접근이 거부되었습니다</div>
+        <div class="error-message">이 페이지에 대한 접근 권한이 없습니다.<br><span style="color:#aaa;">(Forbidden)</span></div>
+        <a href="/" class="home-link">홈으로 돌아가기</a>
+    </div>
+</body>
+</html>
