@@ -3,9 +3,22 @@
 
 #include <sstream>
 
+#include "../exception/NeedMoreInput.hpp"
+#include "../exception/ParserException.hpp"
+
 namespace http {
 	void PacketLineState::parse(Parser* parser) {
-		std::string line = parser->readLine();
+		if (_done) return;
+
+		std::string line;
+		try {
+			line = parser->readLine();
+		} catch (const NeedMoreInput&) {
+			if (parser->inputEnded())
+				throw ParserException("Malformed request: unexpected end of request line",
+									  http::StatusCode::BadRequest);
+			throw;
+		}
 		std::string t1, t2, rest;
 		std::istringstream iss(line);
 		iss >> t1 >> t2;
