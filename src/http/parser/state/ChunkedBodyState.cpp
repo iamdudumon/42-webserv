@@ -51,7 +51,7 @@ namespace http {
 			throw;
 		}
 		size_t semicolon = line.find(';');
-		if (semicolon != std::string::npos) line = line.substr(0, semicolon);
+		if (semicolon != std::string::npos) line.resize(semicolon);
 
 		line.erase(0, line.find_first_not_of(" \t"));
 		if (!line.empty()) line.erase(line.find_last_not_of(" \t") + 1);
