@@ -1,14 +1,27 @@
 // HaederState.cpp
 #include "HeaderState.hpp"
 
+#include <cctype>
+
 #include "../../../utils/str_utils.hpp"
+#include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
+#include "ChunkedBodyState.hpp"
 
 namespace http {
 	void HeaderState::parse(Parser* parser) {
 		if (_done) return;
+
 		while (true) {
-			std::string line = parser->readLine();
+			std::string line;
+			try {
+				line = parser->readLine();
+			} catch (const NeedMoreInput&) {
+				if (parser->inputEnded())
+					throw ParserException("Malformed request: header line truncated",
+										  http::StatusCode::BadRequest);
+				throw;
+			}
 			if (line.empty()) {
 				_done = true;
 				return;
@@ -33,8 +46,37 @@ namespace http {
 		if (parser->_packet->isRequest() && parser->_packet->getHeader().get("host").empty())
 			throw ParserException("Host header is missing", http::StatusCode::BadRequest);
 
+		std::string transferEncoding = parser->_packet->getHeader().get("Transfer-Encoding");
+		bool isChunked = false;
+		if (!transferEncoding.empty()) {
+			std::string normalized = to_lower(transferEncoding);
+			if (normalized.find("chunked") != std::string::npos)
+				isChunked = true;
+			else
+				throw ParserException("Unsupported Transfer-Encoding",
+									  http::StatusCode::BadRequest);
+		}
+
 		std::string lengthStr = parser->_packet->getHeader().get("Content-Length");
-		size_t contentLength = lengthStr != "" ? str_toint(lengthStr) : 0;
+		if (isChunked && !lengthStr.empty())
+			throw ParserException("Content-Length must not be sent with chunked body",
+								  http::StatusCode::BadRequest);
+
+		if (isChunked) {
+			parser->_packet->applyBodyLength(0);
+			parser->changeState(new ChunkedBodyState());
+			return;
+		}
+
+		size_t contentLength = 0;
+		if (!lengthStr.empty()) {
+			for (size_t i = 0; i < lengthStr.size(); ++i) {
+				if (!isdigit(static_cast<unsigned char>(lengthStr[i])))
+					throw ParserException("Invalid Content-Length value",
+										  http::StatusCode::BadRequest);
+			}
+			contentLength = str_toint(lengthStr);
+		}
 		http::ContentType::Value contentType =
 			http::ContentType::to_value(parser->_packet->getHeader().get("Content-Type"));
 
