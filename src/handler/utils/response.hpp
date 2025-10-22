@@ -26,8 +26,7 @@ namespace handler {
 		}
 
 		inline std::string makeCgiResponse(
-			std::string& cgiOutput,
-			http::StatusCode::Value defaultStatusCode = http::StatusCode::OK) {
+			std::string& cgiOutput, http::StatusCode::Value statusCode = http::StatusCode::OK) {
 			size_t headerEnd = cgiOutput.find("\r\n\r\n");
 			std::string httpHeader;
 			if (headerEnd != std::string::npos) {
@@ -38,14 +37,13 @@ namespace handler {
 			if (statusPos != std::string::npos) {
 				size_t lineEnd = httpHeader.find("\r\n", statusPos);
 				std::string statusStr = httpHeader.substr(statusPos + 8, lineEnd - (statusPos + 8));
-				http::StatusCode::Value statusCode =
-					static_cast<http::StatusCode::Value>(str_toint(statusStr));
+				statusCode = static_cast<http::StatusCode::Value>(str_toint(statusStr));
 				cgiOutput.erase(0, lineEnd + 2);
 				statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
 							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
 			} else {
-				statusLine = "HTTP/1.1 " + int_tostr(defaultStatusCode) + " " +
-							 http::StatusCode::to_reasonPhrase(defaultStatusCode) + "\r\n";
+				statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
+							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
 			}
 			return statusLine + cgiOutput;
 		}

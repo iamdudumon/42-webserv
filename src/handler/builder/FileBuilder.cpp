@@ -25,9 +25,8 @@ http::Packet FileBuilder::build(const router::RouteDecision& decision, const htt
 								   http::StatusCode::to_reasonPhrase(decision.status)};
 	http::Packet response(statusLine, http::Header(), http::Body());
 
-	response.addHeader("Content-Type", decision.contentTypeHint.empty()
-										   ? "application/octet-stream"
-										   : decision.contentTypeHint);
+	response.addHeader("Content-Type", decision.contentTypeHint.empty() ? "application/octet-stream"
+																		: decision.contentTypeHint);
 	if (!fileData.empty()) response.appendBody(fileData.data(), fileData.size());
 	return response;
 }

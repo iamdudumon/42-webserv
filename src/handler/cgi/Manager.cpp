@@ -83,7 +83,6 @@ std::string Manager::getResponse(int clientFd) {
 	int cgiFd = it->second;
 	std::map<int, Process>::iterator procIt = _activeProcesses.find(cgiFd);
 	std::string output = procIt->second.output;
-	if (output.empty()) throw Exception();
 	_activeProcesses.erase(procIt);
 	_clientToCgi.erase(it);
 	return output;
