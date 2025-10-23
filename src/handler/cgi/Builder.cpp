@@ -7,7 +7,7 @@ using namespace handler::cgi;
 
 void Builder::setArgv(const router::RouteDecision& decision) {
 	_argv.push_back(const_cast<char*>("/usr/bin/python3"));
-	_argv.push_back(const_cast<char*>(decision.fs_path.c_str()));
+	_argv.push_back(const_cast<char*>(decision.fsPath.c_str()));
 	_argv.push_back(NULL);
 }
 
@@ -18,17 +18,18 @@ void Builder::setEnvp(const router::RouteDecision& decision, const http::Packet&
 	std::string scriptName = request.getStartLine().target;
 	std::string serverPort = int_tostr(decision.server->getListen());
 	std::string serverName = decision.server->getServerName();
+	std::string serverProtocol = request.getStartLine().version;
 
 	_envStrings.push_back("REQUEST_METHOD=" + requestMethod);
-	_envStrings.push_back("QUERY_STRING=");
+	_envStrings.push_back("QUERY_STRING=" + decision.queryString);
 	_envStrings.push_back("CONTENT_TYPE=" + contentType);
 	_envStrings.push_back("CONTENT_LENGTH=" + contentLength);
 	_envStrings.push_back("SCRIPT_NAME=" + scriptName);
-	_envStrings.push_back("PATH_INFO=" + decision.fs_path);
-	_envStrings.push_back("PATH_TRANSLATED=" + decision.fs_root + decision.fs_path);
+	_envStrings.push_back("PATH_INFO=" + decision.fsPath);
+	_envStrings.push_back("PATH_TRANSLATED=" + decision.fsRoot + decision.fsPath);
 	_envStrings.push_back("SERVER_NAME=" + serverName);
 	_envStrings.push_back("SERVER_PORT=" + serverPort);
-	_envStrings.push_back("SERVER_PROTOCOL=" + request.getStartLine().version);
+	_envStrings.push_back("SERVER_PROTOCOL=" + serverProtocol);
 	_envStrings.push_back("REMOTE_ADDR=127.0.0.1");
 	_envStrings.push_back("REMOTE_PORT=0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
@@ -75,9 +76,9 @@ void Builder::build(const router::RouteDecision& decision, const http::Packet& r
 
 	// 필요시 POST 데이터를 CGI로 전송
 	if (request.getStartLine().method == http::Method::POST) {
-		const std::vector<unsigned char>& body_data = request.getBody().getData();
-		if (!body_data.empty()) {
-			write(stdinPipe[1], body_data.data(), body_data.size());
+		const std::vector<unsigned char>& bodyData = request.getBody().getData();
+		if (!bodyData.empty()) {
+			write(stdinPipe[1], bodyData.data(), bodyData.size());
 		}
 	}
 	close(stdinPipe[1]);

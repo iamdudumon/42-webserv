@@ -6,48 +6,60 @@ import cgitb
 
 cgitb.enable()
 
-UPLOAD_DIR = "/home/jinsecho/Desktop/fork-42-webserv/var/www/uploads"
-
-# 디렉터리 생성
+UPLOAD_DIR = "./var/www/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-print("Content-Type: text/html")
-print()
-print("<html><body>")
+def print_header(status):
+    if status:
+        print(f"Status: {status}\r")
+    print("Content-Type: application/json\r")
+    print("\r")
+
+def is_safe_filename(filename):
+    if not filename or filename.startswith('.'):
+        return False
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return False
+    return True
+
+method = os.environ.get('REQUEST_METHOD', 'GET').upper()
+if method != 'POST':
+    print_header("405 Method Not Allowed")
+    print('{"success": false, "error": "POST 메소드만 허용됩니다"}')
+    sys.exit(0)
 
 try:
     form = cgi.FieldStorage()
+    if "file" not in form:
+        print_header("400 Bad Request")
+        print('{"success": false, "error": "파일이 없습니다"}')
+        sys.exit(0)
     
-    print(f"<p>Form keys: {list(form.keys())}</p>")
+    fileitem = form["file"]
+    if not fileitem.filename:
+        print_header("400 Bad Request")
+        print('{"success": false, "error": "유효한 파일명이 아닙니다"}')
+        sys.exit(0)
     
-    if "file" in form:
-        file_item = form["file"]
-        print(f"<p>Has file field</p>")
-        print(f"<p>Filename: {file_item.filename}</p>")
-        
-        if file_item.filename:
-            filename = os.path.basename(file_item.filename)
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            
-            data = file_item.file.read()
-            print(f"<p>Read {len(data)} bytes</p>")
-            
-            with open(filepath, "wb") as f:
-                f.write(data)
-            
-            print(f"<h2>✅ 파일 '{filename}' 업로드 성공!</h2>")
-            print(f"<p>경로: {filepath}</p>")
-            print(f"<p>크기: {os.path.getsize(filepath)} bytes</p>")
-        else:
-            print("<h2>❌ 파일명이 없습니다</h2>")
-    else:
-        print("<h2>❌ 'file' 필드가 없습니다</h2>")
-        
-except Exception as e:
-    print(f"<h2>❌ 에러: {e}</h2>")
-    import traceback
-    print("<pre>")
-    traceback.print_exc()
-    print("</pre>")
+    filename = os.path.basename(fileitem.filename)    
+    if not is_safe_filename(filename):
+        print_header("400 Bad Request")
+        print('{"success": false, "error": "허용되지 않는 파일 형식입니다"}')
+        sys.exit(0)
+    
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(filepath):
+        print_header("409 Conflict")
+        print('{"success": false, "error": "이미 존재하는 파일명입니다"}')
+        sys.exit(0)
+    
+    # 파일 저장
+    with open(filepath, 'wb') as f:
+        f.write(fileitem.file.read())
+    
+    print_header("200 OK")
+    print(f'{{"success": true, "message": "파일이 업로드되었습니다", "filename": "{filename}"}}')
 
-print("</body></html>")
+except Exception as e:
+    print_header("500 Internal Server Error")
+    print(f'{{"success": false, "error": "서버 오류가 발생했습니다"}}')

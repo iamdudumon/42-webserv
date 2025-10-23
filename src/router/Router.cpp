@@ -14,6 +14,14 @@ namespace {
 	using config::LocationConfig;
 }
 
+std::string Router::parseQueryString(const std::string& uri) const {
+	size_t qpos = uri.find('?');
+	if (qpos != std::string::npos) {
+		return uri.substr(qpos + 1);
+	}
+	return "";
+}
+
 bool Router::isCgiRequest(const std::string& locationPath, const std::string& fsPath) const {
 	if (locationPath != "/cgi-bin" && locationPath != "/cgi-bin/") return false;
 
@@ -40,13 +48,13 @@ void Router::resolveLocation(const Config& server, const http::Packet& request,
 							 RouteDecision& decision) const {
 	normPath = utils::normalizePath(utils::extractPath(request.getStartLine().target));
 	locPrefix = bestLocationPrefix(server, normPath);
-	decision.location_path = locPrefix;
+	decision.locationPath = locPrefix;
 }
 
 bool Router::validateMethod(const Config& server, const http::Packet& request,
 							const std::string& locPrefix, RouteDecision& decision) const {
 	const std::vector<std::string>& allowed = server.getLocationAllowMethods(locPrefix);
-	decision.allow_methods = allowed;
+	decision.allowMethods = allowed;
 	if (allowed.empty()) return true;
 
 	const char* method = http::Method::to_string(request.getStartLine().method);
@@ -77,8 +85,8 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 	if (rel.empty()) rel = "/";
 	std::string fsPath = utils::join(fsRoot, rel);
 
-	decision.fs_root = fsRoot;
-	decision.fs_path = fsPath;
+	decision.fsRoot = fsRoot;
+	decision.fsPath = fsPath;
 
 	if (!utils::safeUnder(fsRoot, fsPath)) {
 		decision.action = RouteDecision::Error;
@@ -98,9 +106,9 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 		if (!index.empty()) {
 			std::string idxPath = utils::join(fsPath, index);
 			if (utils::exists(idxPath)) {
-				decision.index_used = index;
-				decision.fs_path = idxPath;
-				decision.content_type_hint = utils::byExtension(index);
+				decision.indexUsed = index;
+				decision.fsPath = idxPath;
+				decision.contentTypeHint = utils::byExtension(index);
 				decision.action = RouteDecision::ServeFile;
 				decision.status = http::StatusCode::OK;
 				return true;
@@ -118,11 +126,10 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 
 	if (isCgiRequest(locPrefix, fsPath)) {
 		decision.action = RouteDecision::Cgi;
-		decision.status = http::StatusCode::OK;
 		return true;
 	}
 
-	decision.content_type_hint = utils::byExtension(fsPath);
+	decision.contentTypeHint = utils::byExtension(fsPath);
 	decision.action = RouteDecision::ServeFile;
 	decision.status = http::StatusCode::OK;
 	return true;
@@ -177,6 +184,8 @@ RouteDecision Router::route(const http::Packet& request, const std::vector<Confi
 	std::string locPrefix;
 
 	resolveLocation(*server, request, normPath, locPrefix, decision);
+
+	decision.queryString = parseQueryString(request.getStartLine().target);	 // 쿼리스트링 추출
 
 	if (!validateMethod(*server, request, locPrefix, decision)) return decision;
 	if (!validateBodySize(*server, request, decision)) return decision;

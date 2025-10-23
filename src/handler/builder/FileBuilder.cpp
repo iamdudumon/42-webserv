@@ -10,7 +10,7 @@ using namespace handler::builder;
 
 http::Packet FileBuilder::build(const router::RouteDecision& decision, const http::Packet&,
 								const std::vector<config::Config>&) const {
-	std::ifstream ifs(decision.fs_path.c_str(), std::ios::in | std::ios::binary);
+	std::ifstream ifs(decision.fsPath.c_str(), std::ios::in | std::ios::binary);
 	if (!ifs.is_open()) {
 		return utils::makePlainResponse(
 			http::StatusCode::NotFound,
@@ -25,9 +25,8 @@ http::Packet FileBuilder::build(const router::RouteDecision& decision, const htt
 								   http::StatusCode::to_reasonPhrase(decision.status)};
 	http::Packet response(statusLine, http::Header(), http::Body());
 
-	response.addHeader("Content-Type", decision.content_type_hint.empty()
-										   ? "application/octet-stream"
-										   : decision.content_type_hint);
+	response.addHeader("Content-Type", decision.contentTypeHint.empty() ? "application/octet-stream"
+																		: decision.contentTypeHint);
 	if (!fileData.empty()) response.appendBody(fileData.data(), fileData.size());
 	return response;
 }

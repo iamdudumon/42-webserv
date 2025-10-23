@@ -74,9 +74,10 @@ void RequestHandler::removeCgiProcess(int fd) {
 
 std::string RequestHandler::getCgiResponse(int fd) {
 	try {
-		return utils::makeCgiResponse(_cgiManager.getResponse(fd));
-	} catch (...) {
-		return utils::makeCgiErrorResponse(http::StatusCode::InternalServerError);
+		std::string cgiOutput = _cgiManager.getResponse(fd);
+		return utils::makeCgiResponse(cgiOutput);
+	} catch (const handler::Exception&) {
+		return utils::makeErrorResponse();
 	}
 }
 
