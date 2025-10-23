@@ -5,7 +5,7 @@ import time
 
 UPLOAD_DIR = "./var/www/uploads"
 
-def print_header(status=None):
+def print_header(status):
     if status:
         print(f"Status: {status}\r")
     print("Content-Type: application/json\r")
@@ -41,7 +41,7 @@ try:
         "total_size": total_size
     }
 
-    print_header()
+    print_header("200 OK")
     print(json.dumps(response, ensure_ascii=False))
 
 except Exception as e:

@@ -9,7 +9,7 @@ cgitb.enable()
 UPLOAD_DIR = "./var/www/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def print_header(status=None):
+def print_header(status):
     if status:
         print(f"Status: {status}\r")
     print("Content-Type: application/json\r")
@@ -57,7 +57,7 @@ try:
     with open(filepath, 'wb') as f:
         f.write(fileitem.file.read())
     
-    print_header()
+    print_header("200 OK")
     print(f'{{"success": true, "message": "파일이 업로드되었습니다", "filename": "{filename}"}}')
 
 except Exception as e:

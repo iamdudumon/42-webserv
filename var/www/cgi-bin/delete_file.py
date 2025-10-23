@@ -6,7 +6,7 @@ from urllib.parse import parse_qs
 
 UPLOAD_DIR = "./var/www/uploads"
 
-def print_header(status=None):
+def print_header(status):
     if status:
         print(f"Status: {status}\r")
     print("Content-Type: application/json\r")
@@ -44,7 +44,7 @@ try:
 
     # 정상 삭제
     os.remove(filepath)
-    print_header()  # Status 헤더 없이 Content-Type만 출력 (200 OK)
+    print_header("200 OK")
     print(json.dumps({"success": True, "message": f"{filename} 파일이 삭제되었습니다"}, ensure_ascii=False))
 
 except Exception as e:

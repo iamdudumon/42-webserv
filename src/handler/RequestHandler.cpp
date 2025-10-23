@@ -73,8 +73,12 @@ void RequestHandler::removeCgiProcess(int fd) {
 }
 
 std::string RequestHandler::getCgiResponse(int fd) {
-	std::string cgiOutput = _cgiManager.getResponse(fd);
-	return utils::makeCgiResponse(cgiOutput);
+	try {
+		std::string cgiOutput = _cgiManager.getResponse(fd);
+		return utils::makeCgiResponse(cgiOutput);
+	} catch (const handler::Exception&) {
+		return utils::makeErrorResponse();
+	}
 }
 
 router::RouteDecision RequestHandler::route(const http::Packet& req,

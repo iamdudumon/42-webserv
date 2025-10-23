@@ -126,7 +126,6 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 
 	if (isCgiRequest(locPrefix, fsPath)) {
 		decision.action = RouteDecision::Cgi;
-		// decision.status = http::StatusCode::OK;
 		return true;
 	}
 

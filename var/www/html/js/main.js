@@ -54,29 +54,82 @@ document.addEventListener('DOMContentLoaded', () => {
 	// setInterval(loadFileList, 5000);
 });
 
+// 렌더링 헬퍼: 서버가 보낸 HTML로 문서 전체를 교체
+function renderErrorHtml(html) {
+    try {
+        document.open();
+        document.write(html);
+        document.close();
+    } catch (e) {
+        console.error('HTML 렌더링 실패:', e);
+        showNotification('❌ 에러 페이지 렌더링 실패', 'error');
+    }
+}
+
+// 알림 표시 함수
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 18px;
+        background: ${type === 'success' ? '#2ecc71' : '#e74c3c'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        z-index: 10000;
+        font-weight: 600;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// 유틸: HTML 이스케이프
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, function (m) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+    });
+}
+
 // 파일 리스트 로드
-function loadFileList() {
-	fetch('/cgi-bin/list_files.py')
-		.then(response => response.json())
-		.then(data => {
-			if (data.success) {
-				// 대시보드 통계 업데이트
-				updateDashboard({
-					totalFiles: data.total_count,
-					totalSize: data.total_size,
-					todayUploads: calculateTodayUploads(data.files)
-				});
+async function loadFileList() {
+    try {
+        const response = await fetch('/cgi-bin/list_files.py');
+        const contentType = response.headers.get('content-type') || '';
+		console.log(response)
+        // 서버가 에러 페이지(HTML)를 직접 반환한 경우 전체 문서로 렌더링
+        if (!response.ok || !contentType.includes('application/json')) {
+            const html = await response.text();
+            renderErrorHtml(html);
+            return;
+        }
 
-				// 파일 리스트 업데이트
-				updateFilesList(data.files);
-
-				// 최근 활동 업데이트
-				updateRecentActivity(data.files);
-			}
-		})
-		.catch(error => {
-			console.error('파일 리스트 로드 실패:', error);
-		});
+        const data = await response.json();
+        if (data && data.success) {
+            updateDashboard({
+                totalFiles: data.total_count,
+                totalSize: data.total_size,
+                todayUploads: calculateTodayUploads(data.files)
+            });
+            updateFilesList(data.files);
+            updateRecentActivity(data.files);
+        } else {
+            console.error('파일 리스트 로드 실패 (API):', data && data.error);
+            showNotification('❌ 파일 리스트 로드 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'), 'error');
+        }
+    } catch (err) {
+        console.error('파일 리스트 로드 오류:', err);
+        showNotification('❌ 파일 리스트 로드 실패', 'error');
+    }
 }
 
 // 오늘 업로드된 파일 수 계산
