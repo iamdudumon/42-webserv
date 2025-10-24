@@ -72,7 +72,8 @@ void RequestHandler::removeCgiProcess(int fd) {
 	_cgiProcessManager.removeCgiProcess(fd);
 }
 
-std::string RequestHandler::getCgiResponse(int fd) {
+std::string RequestHandler::getCgiResponse(int fd, std::vector<config::Config>& configs) {
+	(void)configs;
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		return utils::makeCgiResponse(cgiOutput);

@@ -44,7 +44,7 @@ void Executor::execute(const router::RouteDecision& decision, const http::Packet
 					   server::EpollManager& epollManager, cgi::ProcessManager& cgiManager,
 					   int clientFd) {
 	int stdoutPipe[2], stdinPipe[2];
-	if (pipe2(stdoutPipe, O_NONBLOCK) == -1 || pipe(stdinPipe) == -1) {
+	if (pipe(stdoutPipe) == -1 || pipe(stdinPipe) == -1) {
 		throw Exception();
 	}
 

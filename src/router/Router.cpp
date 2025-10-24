@@ -185,7 +185,7 @@ RouteDecision Router::route(const http::Packet& request, const std::vector<Confi
 
 	resolveLocation(*server, request, normPath, locPrefix, decision);
 
-	decision.queryString = parseQueryString(request.getStartLine().target);	 // 쿼리스트링 추출
+	decision.queryString = parseQueryString(request.getStartLine().target);
 
 	if (!validateMethod(*server, request, locPrefix, decision)) return decision;
 	if (!validateBodySize(*server, request, decision)) return decision;

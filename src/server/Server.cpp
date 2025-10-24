@@ -31,7 +31,7 @@ Server::Server(const std::vector<config::Config>& configs) :
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		throw Exception("sigaction failed");
+		throw server::Exception("sigaction failed");
 	}
 	_epollManager.init();
 }
@@ -60,9 +60,9 @@ void Server::loop() {
 			_epollManager.wait();
 			handleEvents();
 		}
-	} catch (const Exception& e) {
+	} catch (const server::Exception& e) {
 		std::cerr << e.what() << std::endl;
-	} catch (const EpollException& e) {
+	} catch (const server::EpollException& e) {
 		std::cerr << e.what() << std::endl;
 	} catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
@@ -80,7 +80,7 @@ void Server::handleEvents() {
 			int clientFd = _requestHandler.getClientFd(fd);
 			_requestHandler.handleCgiEvent(fd, _epollManager);
 			if (clientFd != -1 && _requestHandler.isCgiCompleted(clientFd)) {
-				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd);
+				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd, _configs);
 				writeSocket(clientFd, cgiResponse);
 				_requestHandler.removeCgiProcess(clientFd);
 				_epollManager.remove(clientFd);

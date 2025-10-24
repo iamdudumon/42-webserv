@@ -46,7 +46,7 @@ namespace handler {
 			bool isCgiProcessing(int) const;
 			bool isCgiCompleted(int) const;
 			void removeCgiProcess(int);
-			std::string getCgiResponse(int);
+			std::string getCgiResponse(int, std::vector<config::Config>&);
 	};
 }  // namespace handler
 
