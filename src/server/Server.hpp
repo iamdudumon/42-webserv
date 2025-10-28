@@ -34,10 +34,10 @@ namespace server {
 			void initAddress(int);
 			void initServer();
 			void loop();
-			void writePacket(int, const http::Packet&);
 			void handleEvents();
-			void writeSocket(int, const std::string&);
 			std::string readSocket(int);
+			void sendResponse(int, const http::Packet&);
+			void sendResponse(int, const std::string&);
 			void cleanupClient(int);
 			http::Parser* ensureParser(int);
 

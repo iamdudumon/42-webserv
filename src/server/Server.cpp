@@ -24,17 +24,7 @@
 using namespace server;
 
 Server::Server(const std::vector<config::Config>& configs) :
-	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {
-	struct sigaction sa;
-
-	sa.sa_handler = handler::cgi::ProcessManager::sigchldHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		throw Exception("sigaction failed");
-	}
-	_epollManager.init();
-}
+	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {}
 
 void Server::initAddress(int index) {
 	_serverAddress.sin_family = AF_INET;
@@ -81,7 +71,7 @@ void Server::handleEvents() {
 			_requestHandler.handleCgiEvent(fd, _epollManager);
 			if (clientFd != -1 && _requestHandler.isCgiCompleted(clientFd)) {
 				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd);
-				writeSocket(clientFd, cgiResponse);
+				sendResponse(clientFd, cgiResponse);
 				_requestHandler.removeCgiProcess(clientFd);
 				_epollManager.remove(clientFd);
 			}
@@ -123,7 +113,7 @@ void Server::handleEvents() {
 						parseResult.errorCode, body,
 						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
 
-					writePacket(clientFd, errorPacket);
+					sendResponse(clientFd, errorPacket);
 					cleanupClient(clientFd);
 					parser = NULL;
 					alreadyCleaned = true;
@@ -153,7 +143,7 @@ void Server::handleEvents() {
 
 					http::Packet httpResponse =
 						_requestHandler.handle(httpRequest, _configs, localPort);
-					writePacket(clientFd, httpResponse);
+					sendResponse(clientFd, httpResponse);
 
 					if (!remainder.empty()) {
 						parser->append(remainder);
@@ -194,13 +184,13 @@ std::string Server::readSocket(int socketFd) {
 	return request;
 }
 
-void Server::writePacket(int socketFd, const http::Packet& httpResponse) {
+void Server::sendResponse(int socketFd, const http::Packet& httpResponse) {
 	std::string rawResponse = http::Serializer::serialize(httpResponse);
-	writeSocket(socketFd, rawResponse);
+	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
-void Server::writeSocket(int socketFd, const std::string& rawData) {
-	::write(socketFd, rawData.c_str(), rawData.size());
+void Server::sendResponse(int socketFd, const std::string& rawResponse) {
+	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
 void Server::cleanupClient(int fd) {
@@ -226,6 +216,16 @@ http::Parser* Server::ensureParser(int fd) {
 }
 
 void Server::run() {
+	struct sigaction sa;
+
+	sa.sa_handler = handler::cgi::ProcessManager::sigchldHandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+		throw Exception("sigaction failed");
+	}
+	_epollManager.init();
+
 	for (size_t i = 0; i < _configs.size(); ++i) {
 		initAddress(static_cast<int>(i));
 		initServer();
