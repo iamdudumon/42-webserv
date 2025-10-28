@@ -12,7 +12,7 @@ namespace handler {
 
 			public:
 				virtual http::Packet build(const router::RouteDecision&, const http::Packet&,
-										   const std::vector<config::Config>&) const;
+										   const std::map<int, config::Config>&) const;
 		};
 	}  // namespace builder
 }  // namespace handler

@@ -12,7 +12,7 @@
 namespace router {
 	class Router {
 		private:
-			const config::Config* selectServer(const std::vector<config::Config>&, int) const;
+			const config::Config* selectServer(const std::map<int, config::Config>&, int) const;
 			std::string bestLocationPrefix(const config::Config&, const std::string&) const;
 
 			bool ensureRequestIsValid(const http::Packet&, RouteDecision&) const;
@@ -28,7 +28,8 @@ namespace router {
 
 		public:
 			Router() {}
-			RouteDecision route(const http::Packet&, const std::vector<config::Config>&, int) const;
+			RouteDecision route(const http::Packet&, const std::map<int, config::Config>&,
+								int) const;
 	};
 }  // namespace router
 

@@ -135,12 +135,10 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 	return true;
 }
 
-const Config* Router::selectServer(const std::vector<Config>& servers, int localPort) const {
-	for (size_t i = 0; i < servers.size(); ++i) {
-		if (servers[i].getListen() == localPort) return &servers[i];
-	}
-
-	return servers.empty() ? NULL : &servers[0];
+const Config* Router::selectServer(const std::map<int, Config>& servers, int localPort) const {
+	auto it = servers.find(localPort);
+	if (it != servers.end()) return &it->second;
+	return servers.empty() ? NULL : &servers.begin()->second;
 }
 
 std::string Router::bestLocationPrefix(const Config& server, const std::string& uriPath) const {
@@ -167,7 +165,7 @@ std::string Router::bestLocationPrefix(const Config& server, const std::string& 
 	return best;
 }
 
-RouteDecision Router::route(const http::Packet& request, const std::vector<Config>& servers,
+RouteDecision Router::route(const http::Packet& request, const std::map<int, Config>& servers,
 							int localPort) const {
 	RouteDecision decision;
 	if (!ensureRequestIsValid(request, decision)) return decision;
@@ -185,7 +183,7 @@ RouteDecision Router::route(const http::Packet& request, const std::vector<Confi
 
 	resolveLocation(*server, request, normPath, locPrefix, decision);
 
-	decision.queryString = parseQueryString(request.getStartLine().target);	 // 쿼리스트링 추출
+	decision.queryString = parseQueryString(request.getStartLine().target);
 
 	if (!validateMethod(*server, request, locPrefix, decision)) return decision;
 	if (!validateBodySize(*server, request, decision)) return decision;

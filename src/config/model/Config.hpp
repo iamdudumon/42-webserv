@@ -15,10 +15,10 @@ namespace config {
 
 	class Config {
 		private:
-			bool _auto_index;
-			int _listen;
-			long long _client_max_body_size;
 			std::string _server_name;
+			int _listen;
+			bool _auto_index;
+			long long _client_max_body_size;
 			std::string _index;
 			std::string _root;
 			std::map<std::string, LocationConfig> _location;

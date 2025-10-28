@@ -34,11 +34,12 @@ namespace config {
 		}
 	}
 
-	void Validator::validate(const std::vector<Config>& configs) {
+	void Validator::validate(const std::map<int, Config>& configs) {
 		std::set<int> ports;
-		for (unsigned long i = 0; i < configs.size(); ++i) {
-			validatePort(configs[i], ports);
-			validateLocations(configs[i]);
+		for (std::map<int, Config>::const_iterator it = configs.begin(); it != configs.end();
+			 ++it) {
+			validatePort(it->second, ports);
+			validateLocations(it->second);
 		}
 	}
 }  // namespace config

@@ -2,7 +2,7 @@
 #ifndef HANDLER_BUILDER_HPP
 #define HANDLER_BUILDER_HPP
 
-#include <vector>
+#include <map>
 
 #include "../../config/model/Config.hpp"
 #include "../../http/model/Packet.hpp"
@@ -14,7 +14,7 @@ namespace handler {
 			public:
 				virtual ~IBuilder() {}
 				virtual http::Packet build(const router::RouteDecision&, const http::Packet&,
-										   const std::vector<config::Config>&) const = 0;
+										   const std::map<int, config::Config>&) const = 0;
 		};
 	}  // namespace builder
 }  // namespace handler

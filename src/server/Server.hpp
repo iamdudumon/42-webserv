@@ -20,7 +20,7 @@
 namespace server {
 	class Server {
 		private:
-			std::vector<config::Config> _configs;
+			std::map<int, config::Config> _configs;
 			std::set<int> _serverSockets;
 			int _clientSocket;
 			int _socketOption;
@@ -42,7 +42,7 @@ namespace server {
 			http::Parser* ensureParser(int);
 
 		public:
-			explicit Server(const std::vector<config::Config>&);
+			explicit Server(const std::map<int, config::Config>&);
 
 			void run();
 	};

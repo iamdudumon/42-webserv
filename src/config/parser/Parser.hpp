@@ -10,7 +10,7 @@
 namespace config {
 	class Parser {
 		private:
-			std::vector<Config> _configs;
+			std::map<int, Config> _configs;
 
 			std::vector<std::string> tokenize(const std::string&);
 			bool expectToken(const std::vector<std::string>&, unsigned long,
@@ -38,7 +38,7 @@ namespace config {
 
 			bool validateArgument(int) const;
 			void loadFromFile(const char*);
-			const std::vector<Config>& getConfigs() const;
+			const std::map<int, Config>& getConfigs() const;
 	};
 }  // namespace config
 
