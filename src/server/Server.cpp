@@ -62,34 +62,38 @@ void Server::loop() {
 void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.eventCount(); i++) {
 		const epoll_event& event = _epollManager.eventAt(i);
-		int fd = event.data.fd;
+		int eventFd = event.data.fd;
+		int localPort = 0;
+		sockaddr_in addr;
+		socklen_t len = sizeof(addr);
+		if (getsockname(eventFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
+			localPort = ntohs(addr.sin_port);
 
-		if (_mainHandler.isCgiProcess(fd)) {
-			int clientFd = _mainHandler.getClientFd(fd);
-			_mainHandler.handleCgiEvent(fd, _epollManager);
-			if (clientFd != -1 && _mainHandler.isCgiCompleted(clientFd)) {
-				std::string cgiResponse = _mainHandler.getCgiResponse(clientFd, _configs);
-				sendResponse(clientFd, cgiResponse);
-				_mainHandler.removeCgiProcess(clientFd);
-				_epollManager.remove(clientFd);
+		if (_mainHandler.isCgiProcess(eventFd)) {
+			int cgiOutputFd = _mainHandler.getClientFd(eventFd);
+			_mainHandler.handleCgiEvent(eventFd, _epollManager);
+			if (cgiOutputFd != -1 && _mainHandler.isCgiCompleted(cgiOutputFd)) {
+				std::string cgiResponse =
+					_mainHandler.getCgiResponse(cgiOutputFd, *findConfig(localPort));
+				sendResponse(cgiOutputFd, cgiResponse);
+				_mainHandler.removeCgiProcess(cgiOutputFd);
+				_epollManager.remove(cgiOutputFd);
 			}
 			continue;
 		}
 
-		if (_serverSockets.find(event.data.fd) != _serverSockets.end()) {
-			_clientSocket =
-				socket::accept(event.data.fd, reinterpret_cast<sockaddr*>(&_clientAddress),
-							   reinterpret_cast<socklen_t*>(&_addressSize));
+		if (_serverSockets.find(eventFd) != _serverSockets.end()) {
+			_clientSocket = socket::accept(eventFd, reinterpret_cast<sockaddr*>(&_clientAddress),
+										   reinterpret_cast<socklen_t*>(&_addressSize));
 			_epollManager.add(_clientSocket);
 			continue;
 		}
 
-		int clientFd = event.data.fd;
-		if (_mainHandler.isCgiProcessing(clientFd)) continue;
+		if (_mainHandler.isCgiProcessing(eventFd)) continue;
 
-		std::string buffer = readSocket(clientFd);
+		std::string buffer = readSocket(eventFd);
 		bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
-		http::Parser* parser = ensureParser(clientFd);
+		http::Parser* parser = ensureParser(eventFd);
 
 		if (!buffer.empty()) parser->append(buffer);
 		if (disconnected) parser->markEndOfInput();
@@ -111,8 +115,8 @@ void Server::handleEvents() {
 						parseResult.errorCode, body,
 						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
 
-					sendResponse(clientFd, errorPacket);
-					cleanupClient(clientFd);
+					sendResponse(eventFd, errorPacket);
+					cleanupClient(eventFd);
 					parser = NULL;
 					alreadyCleaned = true;
 					break;
@@ -122,12 +126,6 @@ void Server::handleEvents() {
 					std::string remainder = parseResult.leftover;
 					bool ended = parseResult.endOfInput;
 
-					int localPort = 0;
-					sockaddr_in addr;
-					socklen_t len = sizeof(addr);
-					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
-						localPort = ntohs(addr.sin_port);
-
 					const config::Config* config = findConfig(localPort);
 					if (!config) {
 						http::Packet errorPacket = handler::utils::makePlainResponse(
@@ -135,20 +133,20 @@ void Server::handleEvents() {
 							http::StatusCode::to_reasonPhrase(
 								http::StatusCode::InternalServerError),
 							http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
-						sendResponse(clientFd, errorPacket);
-						cleanupClient(clientFd);
+						sendResponse(eventFd, errorPacket);
+						cleanupClient(eventFd);
 						parser = NULL;
 						alreadyCleaned = true;
 						break;
 					}
 
 					http::Packet httpResponse((http::StatusLine()), http::Header(), http::Body());
-					bool hasResponse = _mainHandler.handle(clientFd, httpRequest, *config,
+					bool hasResponse = _mainHandler.handle(eventFd, httpRequest, *config,
 														   _epollManager, httpResponse);
 					if (hasResponse) {
-						sendResponse(clientFd, httpResponse);
+						sendResponse(eventFd, httpResponse);
 					} else {
-						if (ended) cleanupClient(clientFd);
+						if (ended) cleanupClient(eventFd);
 						alreadyCleaned = true;
 						break;
 					}
@@ -159,7 +157,7 @@ void Server::handleEvents() {
 						continue;
 					}
 					if (ended) {
-						cleanupClient(clientFd);
+						cleanupClient(eventFd);
 						alreadyCleaned = true;
 					}
 					break;
@@ -169,7 +167,7 @@ void Server::handleEvents() {
 		}
 
 		if (alreadyCleaned) continue;
-		if (disconnected) cleanupClient(clientFd);
+		if (disconnected) cleanupClient(eventFd);
 	}
 }
 
