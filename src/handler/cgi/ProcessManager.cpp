@@ -19,12 +19,7 @@ int ProcessManager::getClientFd(int cgiFd) const {
 }
 
 void ProcessManager::registerProcess(pid_t pid, int cgiFd, int clientFd) {
-	Process process;
-	process.pid = pid;
-	process.cgiFd = cgiFd;
-	process.clientFd = clientFd;
-	process.completed = false;
-	process.output.clear();
+	Process process(pid, cgiFd, clientFd);
 
 	_activeProcesses[cgiFd] = process;
 	_clientToCgi[clientFd] = cgiFd;

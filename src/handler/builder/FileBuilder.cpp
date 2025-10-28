@@ -9,7 +9,7 @@
 using namespace handler::builder;
 
 http::Packet FileBuilder::build(const router::RouteDecision& decision, const http::Packet&,
-								const std::vector<config::Config>&) const {
+								const std::map<int, config::Config>&) const {
 	std::ifstream ifs(decision.fsPath.c_str(), std::ios::in | std::ios::binary);
 	if (!ifs.is_open()) {
 		return utils::makePlainResponse(

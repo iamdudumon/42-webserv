@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	try {
 		config::Parser parser;
 		if (parser.validateArgument(argc)) parser.loadFromFile(argv[1]);
-		std::vector<config::Config> configs = parser.getConfigs();
+		std::map<int, config::Config> configs = parser.getConfigs();
 		server::Server server(configs);
 
 		server.run();
