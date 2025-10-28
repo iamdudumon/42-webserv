@@ -127,9 +127,8 @@ void Server::handleEvents() {
 					int localPort = 0;
 					sockaddr_in addr;
 					socklen_t len = sizeof(addr);
-					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
+					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
 						localPort = ntohs(addr.sin_port);
-					}
 
 					router::RouteDecision decision =
 						_requestHandler.route(httpRequest, _configs, localPort);
@@ -171,12 +170,13 @@ std::string Server::readSocket(int socketFd) {
 
 	while (true) {
 		ssize_t readSize = ::read(socketFd, buffer, defaults::BUFFER_SIZE);
+
 		if (readSize > 0) {
 			request.append(buffer, readSize);
 			if (readSize < defaults::BUFFER_SIZE) break;
-		} else if (readSize == 0) {
+		} else if (readSize == 0)
 			break;
-		} else {
+		else {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) break;
 			return std::string();
 		}
@@ -221,9 +221,7 @@ void Server::run() {
 	sa.sa_handler = handler::cgi::ProcessManager::sigchldHandler;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		throw Exception("sigaction failed");
-	}
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) throw Exception("sigaction failed");
 	_epollManager.init();
 
 	for (size_t i = 0; i < _configs.size(); ++i) {
