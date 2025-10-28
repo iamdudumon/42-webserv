@@ -26,14 +26,12 @@ using namespace server;
 Server::Server(const std::map<int, config::Config>& configs) :
 	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {}
 
-void Server::initAddress(int port) {
+void Server::initServer(int port) {
 	_serverAddress.sin_family = AF_INET;
 	_serverAddress.sin_port = htons(port);
 	_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	std::fill(_serverAddress.sin_zero, _serverAddress.sin_zero + 8, 0);
-}
 
-void Server::initServer() {
 	int serverSocket = socket::create(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	socket::setOption(serverSocket, SOL_SOCKET, SO_REUSEADDR, &_socketOption,
 					  sizeof(_socketOption));
@@ -66,13 +64,13 @@ void Server::handleEvents() {
 		const epoll_event& event = _epollManager.eventAt(i);
 		int fd = event.data.fd;
 
-		if (_requestHandler.isCgiProcess(fd)) {
-			int clientFd = _requestHandler.getClientFd(fd);
-			_requestHandler.handleCgiEvent(fd, _epollManager);
-			if (clientFd != -1 && _requestHandler.isCgiCompleted(clientFd)) {
-				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd, _configs);
+		if (_mainHandler.isCgiProcess(fd)) {
+			int clientFd = _mainHandler.getClientFd(fd);
+			_mainHandler.handleCgiEvent(fd, _epollManager);
+			if (clientFd != -1 && _mainHandler.isCgiCompleted(clientFd)) {
+				std::string cgiResponse = _mainHandler.getCgiResponse(clientFd, _configs);
 				sendResponse(clientFd, cgiResponse);
-				_requestHandler.removeCgiProcess(clientFd);
+				_mainHandler.removeCgiProcess(clientFd);
 				_epollManager.remove(clientFd);
 			}
 			continue;
@@ -87,7 +85,7 @@ void Server::handleEvents() {
 		}
 
 		int clientFd = event.data.fd;
-		if (_requestHandler.isCgiProcessing(clientFd)) continue;
+		if (_mainHandler.isCgiProcessing(clientFd)) continue;
 
 		std::string buffer = readSocket(clientFd);
 		bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
@@ -130,19 +128,30 @@ void Server::handleEvents() {
 					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
 						localPort = ntohs(addr.sin_port);
 
-					router::RouteDecision decision =
-						_requestHandler.route(httpRequest, _configs, localPort);
-					if (decision.action == router::RouteDecision::Cgi) {
-						_requestHandler.handleCgi(httpRequest, _configs, localPort, clientFd,
-												  _epollManager);
-						if (ended) cleanupClient(clientFd);
+					const config::Config* config = findConfig(localPort);
+					if (!config) {
+						http::Packet errorPacket = handler::utils::makePlainResponse(
+							http::StatusCode::InternalServerError,
+							http::StatusCode::to_reasonPhrase(
+								http::StatusCode::InternalServerError),
+							http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+						sendResponse(clientFd, errorPacket);
+						cleanupClient(clientFd);
+						parser = NULL;
 						alreadyCleaned = true;
 						break;
 					}
 
-					http::Packet httpResponse =
-						_requestHandler.handle(httpRequest, _configs, localPort);
-					sendResponse(clientFd, httpResponse);
+					http::Packet httpResponse((http::StatusLine()), http::Header(), http::Body());
+					bool hasResponse = _mainHandler.handle(clientFd, httpRequest, *config,
+														   _epollManager, httpResponse);
+					if (hasResponse) {
+						sendResponse(clientFd, httpResponse);
+					} else {
+						if (ended) cleanupClient(clientFd);
+						alreadyCleaned = true;
+						break;
+					}
 
 					if (!remainder.empty()) {
 						parser->append(remainder);
@@ -162,6 +171,13 @@ void Server::handleEvents() {
 		if (alreadyCleaned) continue;
 		if (disconnected) cleanupClient(clientFd);
 	}
+}
+
+const config::Config* Server::findConfig(int localPort) const {
+	std::map<int, config::Config>::const_iterator it = _configs.find(localPort);
+	if (it != _configs.end()) return &it->second;
+	if (!_configs.empty()) return &(_configs.begin()->second);
+	return NULL;
 }
 
 std::string Server::readSocket(int socketFd) {
@@ -200,7 +216,7 @@ void Server::cleanupClient(int fd) {
 		delete it->second;
 		_parsers.erase(it);
 	}
-	_requestHandler.removeCgiProcess(fd);
+	_mainHandler.removeCgiProcess(fd);
 	_epollManager.remove(fd);
 }
 
@@ -226,8 +242,7 @@ void Server::run() {
 
 	for (std::map<int, config::Config>::iterator it = _configs.begin(); it != _configs.end();
 		 ++it) {
-		initAddress(it->first);
-		initServer();
+		initServer(it->first);
 	}
 	loop();
 }

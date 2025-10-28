@@ -32,59 +32,10 @@ const builder::IBuilder* RequestHandler::selectBuilder(router::RouteDecision::Ac
 	return _defaultBuilder;
 }
 
-http::Packet RequestHandler::handle(const http::Packet& req,
-									const std::map<int, config::Config>& configs,
-									int localPort) const {
-	router::RouteDecision decision = _router.route(req, configs, localPort);
+http::Packet RequestHandler::handle(int clientFd, const http::Packet& req,
+									const router::RouteDecision& decision,
+									const config::Config& config) const {
+	(void) clientFd;
 	const builder::IBuilder* builder = selectBuilder(decision.action);
-
-	return builder->build(decision, req, configs);
-}
-
-void RequestHandler::handleCgi(const http::Packet& req,
-							   const std::map<int, config::Config>& configs, int localPort,
-							   int client_fd, server::EpollManager& epollManager) {
-	router::RouteDecision decision = _router.route(req, configs, localPort);
-	cgi::Executor cgiExecutor;
-	cgiExecutor.execute(decision, req, epollManager, _cgiProcessManager, client_fd);
-}
-
-void RequestHandler::handleCgiEvent(int fd, server::EpollManager& epollManager) {
-	_cgiProcessManager.handleCgiEvent(fd, epollManager);
-}
-
-int RequestHandler::getClientFd(int fd) const {
-	return _cgiProcessManager.getClientFd(fd);
-}
-
-bool RequestHandler::isCgiProcess(int fd) const {
-	return _cgiProcessManager.isCgiProcess(fd);
-}
-
-bool RequestHandler::isCgiProcessing(int clientFd) const {
-	return _cgiProcessManager.isProcessing(clientFd);
-}
-
-bool RequestHandler::isCgiCompleted(int fd) const {
-	return _cgiProcessManager.isCompleted(fd);
-}
-
-void RequestHandler::removeCgiProcess(int fd) {
-	_cgiProcessManager.removeCgiProcess(fd);
-}
-
-std::string RequestHandler::getCgiResponse(int fd, const std::map<int, config::Config>& configs) {
-	(void) configs;
-	try {
-		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-		return utils::makeCgiResponse(cgiOutput);
-	} catch (const handler::Exception&) {
-		return utils::makeErrorResponse();
-	}
-}
-
-router::RouteDecision RequestHandler::route(const http::Packet& req,
-											const std::map<int, config::Config>& configs,
-											int localPort) const {
-	return _router.route(req, configs, localPort);
+	return builder->build(decision, req, config);
 }

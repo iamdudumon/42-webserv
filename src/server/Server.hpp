@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "../config/model/Config.hpp"
-#include "../handler/RequestHandler.hpp"
+#include "../handler/MainHandler.hpp"
 #include "../http/model/Packet.hpp"
 #include "../http/parser/Parser.hpp"
 #include "epoll/manager/EpollManager.hpp"
@@ -28,11 +28,11 @@ namespace server {
 			sockaddr_in _serverAddress;
 			sockaddr_in _clientAddress;
 			EpollManager _epollManager;
-			handler::RequestHandler _requestHandler;
+			handler::MainHandler _mainHandler;
 			std::map<int, http::Parser*> _parsers;
+			const config::Config* findConfig(int) const;
 
-			void initAddress(int);
-			void initServer();
+			void initServer(int);
 			void loop();
 			void handleEvents();
 			std::string readSocket(int);
