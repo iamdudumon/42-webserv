@@ -26,6 +26,8 @@ namespace handler {
 						std::string output;
 						bool completed;
 						Process() : pid(-1), cgiFd(-1), clientFd(-1), completed(false) {}
+						Process(pid_t p, int cFd, int clFd) :
+							pid(p), cgiFd(cFd), clientFd(clFd), completed(false) {}
 				};
 				std::map<int, Process> _activeProcesses;
 				std::map<int, int> _clientToCgi;
