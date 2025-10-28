@@ -49,6 +49,6 @@ void MainHandler::removeCgiProcess(int fd) {
 	_cgiHandler.removeCgiProcess(fd);
 }
 
-std::string MainHandler::getCgiResponse(int fd, const std::map<int, config::Config>& configs) {
-	return _cgiHandler.getCgiResponse(fd, configs);
+std::string MainHandler::getCgiResponse(int fd, const config::Config& config) {
+	return _cgiHandler.getCgiResponse(fd, config);
 }

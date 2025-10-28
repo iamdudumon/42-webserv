@@ -39,8 +39,8 @@ void CgiHandler::removeCgiProcess(int fd) {
 	_cgiProcessManager.removeCgiProcess(fd);
 }
 
-std::string CgiHandler::getCgiResponse(int fd, const std::map<int, config::Config>& configs) {
-	(void) configs;
+std::string CgiHandler::getCgiResponse(int fd, const config::Config& config) {
+	(void) config;
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		return utils::makeCgiResponse(cgiOutput);

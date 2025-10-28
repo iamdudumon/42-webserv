@@ -33,7 +33,7 @@ namespace handler {
 			bool isCgiProcessing(int) const;
 			bool isCgiCompleted(int) const;
 			void removeCgiProcess(int);
-			std::string getCgiResponse(int, const std::map<int, config::Config>&);
+			std::string getCgiResponse(int, const config::Config&);
 	};
 }  // namespace handler
 
