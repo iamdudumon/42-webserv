@@ -16,7 +16,7 @@ namespace config {
 			static void validateLocation(const std::string&, const LocationConfig&);
 
 		public:
-			static void validate(const std::vector<Config>&);
+			static void validate(const std::map<int, Config>&);
 	};
 }  // namespace config
 

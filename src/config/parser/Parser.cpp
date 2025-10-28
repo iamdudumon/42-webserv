@@ -209,7 +209,8 @@ void Parser::parse(const std::vector<std::string>& tokens) {
 		expectToken(tokens, i, "http");
 		expectToken(tokens, ++i, "{");
 		while (tokens.at(++i) != "}") {
-			_configs.push_back(parseServer(tokens, i));
+			Config config = parseServer(tokens, i);
+			_configs[config.getListen()] = config;
 		}
 		expectToken(tokens, i, "}");
 	} catch (const std::out_of_range&) {
@@ -224,6 +225,6 @@ void Parser::loadFromFile(const char* filePath) {
 	Validator::validate(_configs);
 }
 
-const std::vector<Config>& Parser::getConfigs() const {
+const std::map<int, Config>& Parser::getConfigs() const {
 	return _configs;
 }

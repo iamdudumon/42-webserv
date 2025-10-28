@@ -6,10 +6,10 @@
 
 namespace config {
 	Config::Config() :
-		_auto_index(false),
-		_listen(-1),
-		_client_max_body_size(defaults::CLIENT_MAX_BODY_SIZE),
 		_server_name(defaults::SERVER_NAME()),
+		_listen(-1),
+		_auto_index(false),
+		_client_max_body_size(defaults::CLIENT_MAX_BODY_SIZE),
 		_index(defaults::INDEX()) {}
 
 	Config::Config(const Config& other) {

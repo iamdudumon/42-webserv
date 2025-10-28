@@ -23,7 +23,7 @@
 
 using namespace server;
 
-Server::Server(const std::vector<config::Config>& configs) :
+Server::Server(const std::map<int, config::Config>& configs) :
 	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {
 	struct sigaction sa;
 
@@ -36,9 +36,9 @@ Server::Server(const std::vector<config::Config>& configs) :
 	_epollManager.init();
 }
 
-void Server::initAddress(int index) {
+void Server::initAddress(int port) {
 	_serverAddress.sin_family = AF_INET;
-	_serverAddress.sin_port = htons(_configs[index].getListen());
+	_serverAddress.sin_port = htons(port);
 	_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	std::fill(_serverAddress.sin_zero, _serverAddress.sin_zero + 8, 0);
 }
@@ -226,8 +226,9 @@ http::Parser* Server::ensureParser(int fd) {
 }
 
 void Server::run() {
-	for (size_t i = 0; i < _configs.size(); ++i) {
-		initAddress(static_cast<int>(i));
+	for (std::map<int, config::Config>::iterator it = _configs.begin(); it != _configs.end();
+		 ++it) {
+		initAddress(it->first);
 		initServer();
 	}
 	loop();

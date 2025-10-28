@@ -33,7 +33,7 @@ const builder::IBuilder* RequestHandler::selectBuilder(router::RouteDecision::Ac
 }
 
 http::Packet RequestHandler::handle(const http::Packet& req,
-									const std::vector<config::Config>& configs,
+									const std::map<int, config::Config>& configs,
 									int localPort) const {
 	router::RouteDecision decision = _router.route(req, configs, localPort);
 	const builder::IBuilder* builder = selectBuilder(decision.action);
@@ -41,8 +41,9 @@ http::Packet RequestHandler::handle(const http::Packet& req,
 	return builder->build(decision, req, configs);
 }
 
-void RequestHandler::handleCgi(const http::Packet& req, const std::vector<config::Config>& configs,
-							   int localPort, int client_fd, server::EpollManager& epollManager) {
+void RequestHandler::handleCgi(const http::Packet& req,
+							   const std::map<int, config::Config>& configs, int localPort,
+							   int client_fd, server::EpollManager& epollManager) {
 	router::RouteDecision decision = _router.route(req, configs, localPort);
 	cgi::Executor cgiExecutor;
 	cgiExecutor.execute(decision, req, epollManager, _cgiProcessManager, client_fd);
@@ -72,8 +73,8 @@ void RequestHandler::removeCgiProcess(int fd) {
 	_cgiProcessManager.removeCgiProcess(fd);
 }
 
-std::string RequestHandler::getCgiResponse(int fd, std::vector<config::Config>& configs) {
-	(void)configs;
+std::string RequestHandler::getCgiResponse(int fd, const std::map<int, config::Config>& configs) {
+	(void) configs;
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		return utils::makeCgiResponse(cgiOutput);
@@ -83,7 +84,7 @@ std::string RequestHandler::getCgiResponse(int fd, std::vector<config::Config>& 
 }
 
 router::RouteDecision RequestHandler::route(const http::Packet& req,
-											const std::vector<config::Config>& configs,
+											const std::map<int, config::Config>& configs,
 											int localPort) const {
 	return _router.route(req, configs, localPort);
 }

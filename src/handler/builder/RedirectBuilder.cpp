@@ -4,7 +4,7 @@
 using namespace handler::builder;
 
 http::Packet RedirectBuilder::build(const router::RouteDecision& decision, const http::Packet&,
-									const std::vector<config::Config>&) const {
+									const std::map<int, config::Config>&) const {
 	http::StatusLine statusLine = {"HTTP/1.1", decision.status,
 								   http::StatusCode::to_reasonPhrase(decision.status)};
 	http::Packet response(statusLine, http::Header(), http::Body());

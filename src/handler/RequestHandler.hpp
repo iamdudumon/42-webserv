@@ -34,11 +34,12 @@ namespace handler {
 			RequestHandler();
 			~RequestHandler();
 
-			router::RouteDecision route(const http::Packet&, const std::vector<config::Config>&,
+			router::RouteDecision route(const http::Packet&, const std::map<int, config::Config>&,
 										int) const;
-			http::Packet handle(const http::Packet&, const std::vector<config::Config>&, int) const;
+			http::Packet handle(const http::Packet&, const std::map<int, config::Config>&,
+								int) const;
 
-			void handleCgi(const http::Packet&, const std::vector<config::Config>&, int, int,
+			void handleCgi(const http::Packet&, const std::map<int, config::Config>&, int, int,
 						   server::EpollManager&);
 			void handleCgiEvent(int, server::EpollManager&);
 			int getClientFd(int) const;
@@ -46,7 +47,7 @@ namespace handler {
 			bool isCgiProcessing(int) const;
 			bool isCgiCompleted(int) const;
 			void removeCgiProcess(int);
-			std::string getCgiResponse(int, std::vector<config::Config>&);
+			std::string getCgiResponse(int, const std::map<int, config::Config>&);
 	};
 }  // namespace handler
 
