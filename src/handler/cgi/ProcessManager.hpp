@@ -45,7 +45,7 @@ namespace handler {
 				bool isProcessing(int) const;
 				bool isCompleted(int) const;
 				void removeCgiProcess(int);
-				std::string getResponse(int);
+				std::string getResponse(int cgiFd);
 		};
 	}  // namespace cgi
 }  // namespace handler

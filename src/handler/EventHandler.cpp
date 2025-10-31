@@ -10,6 +10,7 @@
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
+#include "cgi/Executor.hpp"
 
 using namespace handler;
 
@@ -25,7 +26,7 @@ EventHandler::~EventHandler() {
 EventHandler::Result EventHandler::handleEvent(int fd, uint32_t events,
 											   const config::Config* config,
 											   server::EpollManager& epollManager) {
-	if (_cgiHandler.isCgiProcess(fd)) {
+	if (_cgiProcessManager.isCgiProcess(fd)) {
 		return handleCgiEvent(fd, events, config, epollManager);
 	}
 	return handleClientEvent(fd, events, config, epollManager);
@@ -34,25 +35,25 @@ EventHandler::Result EventHandler::handleEvent(int fd, uint32_t events,
 EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config::Config* config,
 												  server::EpollManager& epollManager) {
 	Result result;
-	int clientFd = _cgiHandler.getClientFd(fd);
+	int clientFd = _cgiProcessManager.getClientFd(fd);
 	if (clientFd == -1) return result;
 
-	_cgiHandler.handleEvent(fd, epollManager);
-	if (!_cgiHandler.isCgiCompleted(clientFd)) return result;
+	_cgiProcessManager.handleCgiEvent(fd, epollManager);
+	if (!_cgiProcessManager.isCompleted(clientFd)) return result;
 
-	const config::Config* usedConfig = config;
-	if (!usedConfig) {
-		std::map<int, const config::Config*>::const_iterator it = _cgiClientConfigs.find(clientFd);
-		if (it != _cgiClientConfigs.end()) usedConfig = it->second;
-	}
+	std::map<int, const config::Config*>::const_iterator it = _cgiClientConfigs.find(clientFd);
+	if (it != _cgiClientConfigs.end()) config = it->second;
 
 	std::string rawResponse;
-	if (usedConfig)
-		rawResponse = _cgiHandler.getCgiResponse(clientFd, *usedConfig);
-	else
-		rawResponse = utils::makeErrorResponse(http::StatusCode::InternalServerError);
-	result.response = Response(clientFd, rawResponse, true);
+	try {
+		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
+		rawResponse = config ? utils::makeCgiResponse(cgiOutput) : utils::makeErrorResponse();
+	} catch (const handler::Exception&) {
+		rawResponse = utils::makeErrorResponse();
+	}
+	_cgiProcessManager.removeCgiProcess(clientFd);
 	_cgiClientConfigs.erase(clientFd);
+	result.response = Response(clientFd, rawResponse, true);
 	return result;
 }
 
@@ -102,7 +103,9 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				router::RouteDecision decision = _router.route(httpRequest, *config);
 				if (decision.action == router::RouteDecision::Cgi) {
 					_cgiClientConfigs[fd] = decision.server;
-					_cgiHandler.handle(fd, httpRequest, decision, epollManager);
+					cgi::Executor executor;
+					executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
+
 					if (ended) result.closeFd = fd;
 					if (!remainder.empty()) {
 						parser->append(remainder);
@@ -139,7 +142,7 @@ void EventHandler::cleanup(int fd) {
 		_parsers.erase(it);
 	}
 	_cgiClientConfigs.erase(fd);
-	_cgiHandler.removeCgiProcess(fd);
+	_cgiProcessManager.removeCgiProcess(fd);
 }
 
 http::Parser* EventHandler::ensureParser(int fd) {

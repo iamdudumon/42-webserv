@@ -9,8 +9,8 @@
 #include "../config/model/Config.hpp"
 #include "../http/parser/Parser.hpp"
 #include "../router/Router.hpp"
-#include "CgiHandler.hpp"
 #include "RequestHandler.hpp"
+#include "cgi/ProcessManager.hpp"
 
 namespace server {
 	class EpollManager;
@@ -18,12 +18,25 @@ namespace server {
 
 namespace handler {
 	class EventHandler {
-			struct Result;
+		public:
+			struct Response {
+					int fd;
+					std::string data;
+					bool closeAfterSend;
+					explicit Response(int socket = -1, const std::string& raw = std::string(),
+									  bool close = false) :
+						fd(socket), data(raw), closeAfterSend(close) {}
+			};
+			struct Result {
+					Response response;
+					int closeFd;
+					Result() : response(), closeFd(-1) {}
+			};
 
 		private:
 			router::Router _router;
 			RequestHandler _requestHandler;
-			CgiHandler _cgiHandler;
+			cgi::ProcessManager _cgiProcessManager;
 			std::map<int, http::Parser*> _parsers;
 			std::map<int, const config::Config*> _cgiClientConfigs;
 
@@ -33,20 +46,6 @@ namespace handler {
 			Result handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 
 		public:
-			struct Response {
-					int fd;
-					std::string data;
-					bool closeAfterSend;
-					Response(int socket = -1, const std::string& raw = std::string(),
-							 bool close = false) :
-						fd(socket), data(raw), closeAfterSend(close) {}
-			};
-			struct Result {
-					Response response;
-					int closeFd;
-					Result() : response(), closeFd(-1) {}
-			};
-
 			EventHandler();
 			~EventHandler();
 
