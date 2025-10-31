@@ -6,7 +6,8 @@ import cgitb
 
 cgitb.enable()
 
-UPLOAD_DIR = "./var/www/uploads"
+UPLOAD_DIR = os.environ.get('UPLOAD_PATH') or './var/www/uploads'
+UPLOAD_DIR = os.path.abspath(os.path.expanduser(UPLOAD_DIR))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def print_header(status):

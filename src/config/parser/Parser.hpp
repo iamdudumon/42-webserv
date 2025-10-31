@@ -20,6 +20,7 @@ namespace config {
 			void parseListen(const std::vector<std::string>&, Config&, unsigned long&);
 			void parseClientMaxBodySize(const std::vector<std::string>&, Config&, unsigned long&);
 			void parseServerName(const std::vector<std::string>&, Config&, unsigned long&);
+			void parseUploadPath(const std::vector<std::string>&, Config&, unsigned long&);
 			void parseIndex(const std::vector<std::string>&, Config&, unsigned long&);
 			void parseRoot(const std::vector<std::string>&, Config&, unsigned long&);
 			void parseLocationRoot(const std::vector<std::string>&, Config&, const std::string&,

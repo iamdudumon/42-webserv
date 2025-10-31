@@ -106,6 +106,12 @@ void Parser::parseServerName(const std::vector<std::string>& tokens, Config& con
 	expectToken(tokens, ++i, ";");
 }
 
+void Parser::parseUploadPath(const std::vector<std::string>& tokens, Config& config,
+							 unsigned long& i) {
+	config.setUploadPath(tokens.at(i));
+	expectToken(tokens, ++i, ";");
+}
+
 void Parser::parseIndex(const std::vector<std::string>& tokens, Config& config, unsigned long& i) {
 	config.setIndex(tokens.at(i));
 	expectToken(tokens, ++i, ";");
@@ -121,12 +127,12 @@ void Parser::parseErrorPage(const std::vector<std::string>& tokens, Config& conf
 	char* end = NULL;
 	std::vector<long> statusCodes;
 	long statusCode = std::strtol(tokens.at(i++).c_str(), &end, 10);
-	if (*end != 0)
+	if (*end != 0 || statusCode < 400 || 599 < statusCode)
 		throw Exception("[emerg] Invalid configuration: error_page '" + tokens.at(i) + "'");
 	statusCodes.push_back(statusCode);
 	for (; i < tokens.size(); ++i) {
 		statusCode = std::strtol(tokens.at(i).c_str(), &end, 10);
-		if (*end != 0) break;
+		if (*end != 0 || statusCode < 400 || 599 < statusCode) break;
 		statusCodes.push_back(statusCode);
 	}
 	for (size_t j = 0; j < statusCodes.size(); ++j) {
@@ -188,6 +194,8 @@ Config Parser::parseServer(const std::vector<std::string>& tokens, unsigned long
 			parseAutoIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "server_name")
 			parseServerName(tokens, config, ++i);
+		else if (tokens.at(i) == "upload_path")
+			parseUploadPath(tokens, config, ++i);
 		else if (tokens.at(i) == "index")
 			parseIndex(tokens, config, ++i);
 		else if (tokens.at(i) == "root")

@@ -19,6 +19,7 @@ namespace config {
 			int _listen;
 			bool _auto_index;
 			long long _client_max_body_size;
+			std::string _upload_path;
 			std::string _index;
 			std::string _root;
 			std::map<std::string, LocationConfig> _location;
@@ -35,6 +36,7 @@ namespace config {
 			long long getClientMaxBodySize() const;
 			const std::string& getServerName() const;
 			const std::string& getIndex() const;
+			const std::string& getUploadPath() const;
 			const std::string& getRoot() const;
 			const std::map<int, std::string>& getErrorPages() const;
 			const std::map<std::string, LocationConfig>& getLocation() const;
@@ -46,6 +48,7 @@ namespace config {
 			void setListen(int);
 			void setClientMaxBodySize(long long);
 			void setServerName(const std::string&);
+			void setUploadPath(const std::string&);
 			void setIndex(const std::string&);
 			void setRoot(const std::string&);
 			void setErrorPage(int, const std::string&);

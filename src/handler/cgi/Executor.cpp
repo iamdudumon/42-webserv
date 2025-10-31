@@ -19,6 +19,7 @@ void Executor::setEnvp(const router::RouteDecision& decision, const http::Packet
 	std::string serverPort = int_tostr(decision.server->getListen());
 	std::string serverName = decision.server->getServerName();
 	std::string serverProtocol = request.getStartLine().version;
+	std::string uploadPath = decision.server->getUploadPath();
 
 	_envStrings.push_back("REQUEST_METHOD=" + requestMethod);
 	_envStrings.push_back("QUERY_STRING=" + decision.queryString);
@@ -33,6 +34,7 @@ void Executor::setEnvp(const router::RouteDecision& decision, const http::Packet
 	_envStrings.push_back("REMOTE_ADDR=127.0.0.1");
 	_envStrings.push_back("REMOTE_PORT=0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	_envStrings.push_back("UPLOAD_PATH=" + uploadPath);
 
 	for (size_t i = 0; i < _envStrings.size(); ++i) {
 		_envp.push_back(const_cast<char*>(_envStrings[i].c_str()));
