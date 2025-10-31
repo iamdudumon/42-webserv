@@ -14,7 +14,7 @@ namespace handler {
 			public:
 				virtual ~IBuilder() {}
 				virtual http::Packet build(const router::RouteDecision&, const http::Packet&,
-										   const std::map<int, config::Config>&) const = 0;
+										   const config::Config&) const = 0;
 		};
 	}  // namespace builder
 }  // namespace handler

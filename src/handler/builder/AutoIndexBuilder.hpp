@@ -9,7 +9,7 @@ namespace handler {
 		class AutoIndexBuilder : public IBuilder {
 			public:
 				virtual http::Packet build(const router::RouteDecision&, const http::Packet&,
-										   const std::map<int, config::Config>&) const;
+										   const config::Config&) const;
 		};
 	}  // namespace builder
 }  // namespace handler

@@ -1,6 +1,8 @@
 // ProcessManager.cpp
 #include "ProcessManager.hpp"
 
+#include <cerrno>
+
 using namespace handler::cgi;
 
 void ProcessManager::sigchldHandler(int sig) {
@@ -32,13 +34,23 @@ void ProcessManager::handleCgiEvent(int cgiFd, server::EpollManager& epollManage
 	}
 	Process& process = it->second;
 	char buffer[4096];
-	int n;
-	while ((n = read(cgiFd, buffer, sizeof(buffer) - 1)) > 0) {
-		buffer[n] = '\0';
-		process.output.append(buffer);
+	bool eof = false;
+
+	while (true) {
+		int n = read(cgiFd, buffer, sizeof(buffer));
+		if (n > 0) {
+			process.output.append(buffer, n);
+			continue;
+		}
+		if (n == 0) eof = true;
+		if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			// no more data for now
+		} else if (n < 0 && errno != EINTR)
+			eof = true;
+		break;
 	}
-	process.completed = true;
-	epollManager.remove(cgiFd);
+	process.completed = eof;
+	if (eof) epollManager.remove(cgiFd);
 }
 
 bool ProcessManager::isCgiProcess(int fd) const {
@@ -74,18 +86,11 @@ void ProcessManager::removeCgiProcess(int clientFd) {
 	}
 }
 
-std::string ProcessManager::getResponse(int clientFd) {
-	std::map<int, int>::iterator it = _clientToCgi.find(clientFd);
-	if (it == _clientToCgi.end()) throw handler::Exception();
-
-	int cgiFd = it->second;
+std::string ProcessManager::getResponse(int cgiFd) {
 	std::map<int, Process>::iterator procIt = _activeProcesses.find(cgiFd);
 	if (procIt == _activeProcesses.end()) throw handler::Exception();
-
 	std::string output = procIt->second.output;
 	if (output.empty()) throw handler::Exception();
 
-	_activeProcesses.erase(procIt);
-	_clientToCgi.erase(it);
 	return output;
 }

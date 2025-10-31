@@ -16,7 +16,7 @@ std::string ErrorBuilder::joinAllowMethods(const std::vector<std::string>& metho
 }
 
 http::Packet ErrorBuilder::build(const router::RouteDecision& decision, const http::Packet&,
-								 const std::map<int, config::Config>&) const {
+								 const config::Config&) const {
 	http::Packet response = utils::makePlainResponse(
 		decision.status, http::StatusCode::to_reasonPhrase(decision.status),
 		http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));

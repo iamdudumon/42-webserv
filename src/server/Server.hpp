@@ -12,9 +12,8 @@
 #include <vector>
 
 #include "../config/model/Config.hpp"
-#include "../handler/RequestHandler.hpp"
+#include "../handler/EventHandler.hpp"
 #include "../http/model/Packet.hpp"
-#include "../http/parser/Parser.hpp"
 #include "epoll/manager/EpollManager.hpp"
 
 namespace server {
@@ -28,18 +27,15 @@ namespace server {
 			sockaddr_in _serverAddress;
 			sockaddr_in _clientAddress;
 			EpollManager _epollManager;
-			handler::RequestHandler _requestHandler;
-			std::map<int, http::Parser*> _parsers;
+			handler::EventHandler _eventHandler;
 
-			void initAddress(int);
-			void initServer();
+			const config::Config* findConfig(int) const;
+
+			void initServer(int);
 			void loop();
-			void writePacket(int, const http::Packet&);
 			void handleEvents();
-			void writeSocket(int, const std::string&);
-			std::string readSocket(int);
-			void cleanupClient(int);
-			http::Parser* ensureParser(int);
+			void sendResponse(int, const http::Packet&);
+			void sendResponse(int, const std::string&);
 
 		public:
 			explicit Server(const std::map<int, config::Config>&);

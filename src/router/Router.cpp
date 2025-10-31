@@ -43,17 +43,20 @@ bool Router::ensureRequestIsValid(const http::Packet& request, RouteDecision& de
 	return true;
 }
 
-void Router::resolveLocation(const Config& server, const http::Packet& request,
+void Router::resolveLocation(const Config& config, const http::Packet& request,
 							 std::string& normPath, std::string& locPrefix,
 							 RouteDecision& decision) const {
 	normPath = utils::normalizePath(utils::extractPath(request.getStartLine().target));
-	locPrefix = bestLocationPrefix(server, normPath);
+	locPrefix = bestLocationPrefix(config, normPath);
 	decision.locationPath = locPrefix;
 }
 
-bool Router::validateMethod(const Config& server, const http::Packet& request,
+bool Router::validateMethod(const Config& config, const http::Packet& request,
 							const std::string& locPrefix, RouteDecision& decision) const {
-	const std::vector<std::string>& allowed = server.getLocationAllowMethods(locPrefix);
+	std::map<std::string, LocationConfig>::const_iterator it = config.getLocation().find(locPrefix);
+	if (it == config.getLocation().end()) return true;
+
+	const std::vector<std::string>& allowed = it->second._allow_methods;
 	decision.allowMethods = allowed;
 	if (allowed.empty()) return true;
 
@@ -67,10 +70,10 @@ bool Router::validateMethod(const Config& server, const http::Packet& request,
 	return false;
 }
 
-bool Router::validateBodySize(const Config& server, const http::Packet& request,
+bool Router::validateBodySize(const Config& config, const http::Packet& request,
 							  RouteDecision& decision) const {
 	if (request.getStartLine().method != http::Method::POST) return true;
-	if (request.getBody().getLength() <= static_cast<size_t>(server.getClientMaxBodySize()))
+	if (request.getBody().getLength() <= static_cast<size_t>(config.getClientMaxBodySize()))
 		return true;
 
 	decision.action = RouteDecision::Error;
@@ -78,10 +81,19 @@ bool Router::validateBodySize(const Config& server, const http::Packet& request,
 	return false;
 }
 
-bool Router::decideResource(const Config& server, const std::string& normPath,
+bool Router::decideResource(const Config& config, const std::string& normPath,
 							const std::string& locPrefix, RouteDecision& decision) const {
-	std::string fsRoot = server.getLocationRoot(locPrefix);
-	std::string rel = normPath.substr(locPrefix.size());
+	const std::map<std::string, LocationConfig>& locations = config.getLocation();
+	bool hasLocation = locations.find(locPrefix) != locations.end();
+
+	std::string fsRoot = hasLocation ? config.getLocationRoot(locPrefix) : config.getRoot();
+	std::string rel;
+	if (locPrefix == "/" || !hasLocation)
+		rel = normPath;
+	else if (normPath.size() >= locPrefix.size())
+		rel = normPath.substr(locPrefix.size());
+	else
+		rel = "/";
 	if (rel.empty()) rel = "/";
 	std::string fsPath = utils::join(fsRoot, rel);
 
@@ -101,8 +113,8 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 	}
 
 	if (utils::isDir(fsPath)) {
-		std::string index = server.getLocationIndex(locPrefix);
-		if (index.empty()) index = server.getIndex();
+		std::string index = config.getLocationIndex(locPrefix);
+		if (index.empty()) index = config.getIndex();
 		if (!index.empty()) {
 			std::string idxPath = utils::join(fsPath, index);
 			if (utils::exists(idxPath)) {
@@ -114,7 +126,7 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 				return true;
 			}
 		}
-		if (server.getAutoIndex()) {
+		if (config.getAutoIndex()) {
 			decision.action = RouteDecision::ServeAutoIndex;
 			decision.status = http::StatusCode::OK;
 			return true;
@@ -135,14 +147,8 @@ bool Router::decideResource(const Config& server, const std::string& normPath,
 	return true;
 }
 
-const Config* Router::selectServer(const std::map<int, Config>& servers, int localPort) const {
-	auto it = servers.find(localPort);
-	if (it != servers.end()) return &it->second;
-	return servers.empty() ? NULL : &servers.begin()->second;
-}
-
-std::string Router::bestLocationPrefix(const Config& server, const std::string& uriPath) const {
-	const std::map<std::string, LocationConfig>& locationConfigSet = server.getLocation();
+std::string Router::bestLocationPrefix(const Config& config, const std::string& uriPath) const {
+	const std::map<std::string, LocationConfig>& locationConfigSet = config.getLocation();
 	std::string best = "/";
 	size_t bestLen = 0;
 
@@ -157,37 +163,28 @@ std::string Router::bestLocationPrefix(const Config& server, const std::string& 
 			}
 		}
 	}
-	if (bestLen == 0 && !server.getLocation().empty()) {
-		if (server.getLocation().find("/") != server.getLocation().end()) return std::string("/");
-		return server.getLocation().begin()->first;
+	if (bestLen == 0 && !config.getLocation().empty()) {
+		return std::string("/");
 	}
 
 	return best;
 }
 
-RouteDecision Router::route(const http::Packet& request, const std::map<int, Config>& servers,
-							int localPort) const {
+RouteDecision Router::route(const http::Packet& request, const Config& config) const {
 	RouteDecision decision;
 	if (!ensureRequestIsValid(request, decision)) return decision;
-	const Config* server = selectServer(servers, localPort);
-	if (!server) {
-		decision.action = RouteDecision::Error;
-		decision.status = http::StatusCode::InternalServerError;
-		return decision;
-	}
-
-	decision.server = server;
+	decision.server = &config;
 
 	std::string normPath;
 	std::string locPrefix;
 
-	resolveLocation(*server, request, normPath, locPrefix, decision);
+	resolveLocation(config, request, normPath, locPrefix, decision);
 
 	decision.queryString = parseQueryString(request.getStartLine().target);
 
-	if (!validateMethod(*server, request, locPrefix, decision)) return decision;
-	if (!validateBodySize(*server, request, decision)) return decision;
-	if (!decideResource(*server, normPath, locPrefix, decision)) return decision;
+	if (!validateMethod(config, request, locPrefix, decision)) return decision;
+	if (!validateBodySize(config, request, decision)) return decision;
+	if (!decideResource(config, normPath, locPrefix, decision)) return decision;
 
 	return decision;
 }

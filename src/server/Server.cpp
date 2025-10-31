@@ -6,44 +6,25 @@
 #include <sys/epoll.h>
 
 #include <algorithm>
-#include <cerrno>
-#include <cstring>
 #include <iostream>
 
-#include "../handler/utils/response.hpp"
-#include "../http/Enums.hpp"
-#include "../http/parser/Parser.hpp"
-#include "../http/parser/exception/NeedMoreInput.hpp"
-#include "../http/parser/exception/ParserException.hpp"
 #include "../http/serializer/Serializer.hpp"
-#include "Defaults.hpp"
 #include "epoll/exception/EpollException.hpp"
 #include "exception/Exception.hpp"
 #include "wrapper/SocketWrapper.hpp"
 
 using namespace server;
+using namespace handler;
 
 Server::Server(const std::map<int, config::Config>& configs) :
-	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {
-	struct sigaction sa;
+	_configs(configs), _clientSocket(-1), _socketOption(1), _addressSize(sizeof(_serverAddress)) {}
 
-	sa.sa_handler = handler::cgi::ProcessManager::sigchldHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		throw server::Exception("sigaction failed");
-	}
-	_epollManager.init();
-}
-
-void Server::initAddress(int port) {
+void Server::initServer(int port) {
 	_serverAddress.sin_family = AF_INET;
 	_serverAddress.sin_port = htons(port);
 	_serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	std::fill(_serverAddress.sin_zero, _serverAddress.sin_zero + 8, 0);
-}
 
-void Server::initServer() {
 	int serverSocket = socket::create(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	socket::setOption(serverSocket, SOL_SOCKET, SO_REUSEADDR, &_socketOption,
 					  sizeof(_socketOption));
@@ -74,162 +55,67 @@ void Server::loop() {
 void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.eventCount(); i++) {
 		const epoll_event& event = _epollManager.eventAt(i);
-		int fd = event.data.fd;
+		int eventFd = event.data.fd;
 
-		if (_requestHandler.isCgiProcess(fd)) {
-			int clientFd = _requestHandler.getClientFd(fd);
-			_requestHandler.handleCgiEvent(fd, _epollManager);
-			if (clientFd != -1 && _requestHandler.isCgiCompleted(clientFd)) {
-				std::string cgiResponse = _requestHandler.getCgiResponse(clientFd, _configs);
-				writeSocket(clientFd, cgiResponse);
-				_requestHandler.removeCgiProcess(clientFd);
-				_epollManager.remove(clientFd);
-			}
-			continue;
-		}
-
-		if (_serverSockets.find(event.data.fd) != _serverSockets.end()) {
-			_clientSocket =
-				socket::accept(event.data.fd, reinterpret_cast<sockaddr*>(&_clientAddress),
-							   reinterpret_cast<socklen_t*>(&_addressSize));
+		if (_serverSockets.find(eventFd) != _serverSockets.end()) {
+			_clientSocket = socket::accept(eventFd, reinterpret_cast<sockaddr*>(&_clientAddress),
+										   reinterpret_cast<socklen_t*>(&_addressSize));
 			_epollManager.add(_clientSocket);
 			continue;
 		}
 
-		int clientFd = event.data.fd;
-		if (_requestHandler.isCgiProcessing(clientFd)) continue;
+		int localPort = 0;
+		sockaddr_in addr;
+		socklen_t len = sizeof(addr);
+		if (getsockname(eventFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
+			localPort = ntohs(addr.sin_port);
 
-		std::string buffer = readSocket(clientFd);
-		bool disconnected = (event.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
-		http::Parser* parser = ensureParser(clientFd);
+		EventHandler::Result result =
+			_eventHandler.handleEvent(eventFd, event.events, findConfig(localPort), _epollManager);
 
-		if (!buffer.empty()) parser->append(buffer);
-		if (disconnected) parser->markEndOfInput();
-		if (buffer.empty() && !disconnected) continue;
-
-		bool alreadyCleaned = false;
-		while (true) {
-			http::Parser::Result parseResult = parser->parse();
-
-			switch (parseResult.status) {
-				case http::Parser::Result::Incomplete:
-					break;
-				case http::Parser::Result::Error: {
-					const std::string& body =
-						parseResult.errorMessage.empty()
-							? http::StatusCode::to_reasonPhrase(parseResult.errorCode)
-							: parseResult.errorMessage;
-					http::Packet errorPacket = handler::utils::makePlainResponse(
-						parseResult.errorCode, body,
-						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
-
-					writePacket(clientFd, errorPacket);
-					cleanupClient(clientFd);
-					parser = NULL;
-					alreadyCleaned = true;
-					break;
-				}
-				case http::Parser::Result::Completed: {
-					http::Packet httpRequest = parseResult.packet;
-					std::string remainder = parseResult.leftover;
-					bool ended = parseResult.endOfInput;
-
-					int localPort = 0;
-					sockaddr_in addr;
-					socklen_t len = sizeof(addr);
-					if (getsockname(clientFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
-						localPort = ntohs(addr.sin_port);
-					}
-
-					router::RouteDecision decision =
-						_requestHandler.route(httpRequest, _configs, localPort);
-					if (decision.action == router::RouteDecision::Cgi) {
-						_requestHandler.handleCgi(httpRequest, _configs, localPort, clientFd,
-												  _epollManager);
-						if (ended) cleanupClient(clientFd);
-						alreadyCleaned = true;
-						break;
-					}
-
-					http::Packet httpResponse =
-						_requestHandler.handle(httpRequest, _configs, localPort);
-					writePacket(clientFd, httpResponse);
-
-					if (!remainder.empty()) {
-						parser->append(remainder);
-						if (ended) parser->markEndOfInput();
-						continue;
-					}
-					if (ended) {
-						cleanupClient(clientFd);
-						alreadyCleaned = true;
-					}
-					break;
-				}
+		if (result.response.fd != -1) {
+			sendResponse(result.response.fd, result.response.data);
+			if (result.response.closeAfterSend) {
+				_eventHandler.cleanup(result.response.fd);
+				_epollManager.remove(result.response.fd);
 			}
-			break;
 		}
 
-		if (alreadyCleaned) continue;
-		if (disconnected) cleanupClient(clientFd);
+		if (result.closeFd != -1 &&
+			(result.closeFd != result.response.fd || !result.response.closeAfterSend)) {
+			_eventHandler.cleanup(result.closeFd);
+			_epollManager.remove(result.closeFd);
+		}
 	}
 }
 
-std::string Server::readSocket(int socketFd) {
-	char buffer[defaults::BUFFER_SIZE] = {0};
-	std::string request;
-
-	while (true) {
-		ssize_t readSize = ::read(socketFd, buffer, defaults::BUFFER_SIZE);
-		if (readSize > 0) {
-			request.append(buffer, readSize);
-			if (readSize < defaults::BUFFER_SIZE) break;
-		} else if (readSize == 0) {
-			break;
-		} else {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-			return std::string();
-		}
-	}
-	return request;
+const config::Config* Server::findConfig(int localPort) const {
+	std::map<int, config::Config>::const_iterator it = _configs.find(localPort);
+	if (it != _configs.end()) return &it->second;
+	return NULL;
 }
 
-void Server::writePacket(int socketFd, const http::Packet& httpResponse) {
+void Server::sendResponse(int socketFd, const http::Packet& httpResponse) {
 	std::string rawResponse = http::Serializer::serialize(httpResponse);
-	writeSocket(socketFd, rawResponse);
+	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
-void Server::writeSocket(int socketFd, const std::string& rawData) {
-	::write(socketFd, rawData.c_str(), rawData.size());
-}
-
-void Server::cleanupClient(int fd) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-
-	if (it != _parsers.end()) {
-		delete it->second;
-		_parsers.erase(it);
-	}
-	_requestHandler.removeCgiProcess(fd);
-	_epollManager.remove(fd);
-}
-
-http::Parser* Server::ensureParser(int fd) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-
-	if (it == _parsers.end()) {
-		http::Parser* parser = new http::Parser();
-		_parsers.insert(std::make_pair(fd, parser));
-		return parser;
-	}
-	return it->second;
+void Server::sendResponse(int socketFd, const std::string& rawResponse) {
+	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
 void Server::run() {
+	struct sigaction sa;
+
+	sa.sa_handler = cgi::ProcessManager::sigchldHandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) throw Exception("sigaction failed");
+	_epollManager.init();
+
 	for (std::map<int, config::Config>::iterator it = _configs.begin(); it != _configs.end();
 		 ++it) {
-		initAddress(it->first);
-		initServer();
+		initServer(it->first);
 	}
 	loop();
 }
