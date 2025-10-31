@@ -135,12 +135,6 @@ bool Router::decideResource(const Config& config, const std::string& normPath,
 	return true;
 }
 
-// const Config* Router::selectServer(const std::map<int, Config>& servers, int localPort) const {
-// 	auto it = servers.find(localPort);
-// 	if (it != servers.end()) return &it->second;
-// 	return servers.empty() ? NULL : &servers.begin()->second;
-// }
-
 std::string Router::bestLocationPrefix(const Config& config, const std::string& uriPath) const {
 	const std::map<std::string, LocationConfig>& locationConfigSet = config.getLocation();
 	std::string best = "/";
