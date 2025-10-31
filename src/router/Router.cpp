@@ -53,7 +53,10 @@ void Router::resolveLocation(const Config& config, const http::Packet& request,
 
 bool Router::validateMethod(const Config& config, const http::Packet& request,
 							const std::string& locPrefix, RouteDecision& decision) const {
-	const std::vector<std::string>& allowed = config.getLocationAllowMethods(locPrefix);
+	std::map<std::string, LocationConfig>::const_iterator it = config.getLocation().find(locPrefix);
+	if (it == config.getLocation().end()) return true;
+
+	const std::vector<std::string>& allowed = it->second._allow_methods;
 	decision.allowMethods = allowed;
 	if (allowed.empty()) return true;
 
@@ -80,8 +83,17 @@ bool Router::validateBodySize(const Config& config, const http::Packet& request,
 
 bool Router::decideResource(const Config& config, const std::string& normPath,
 							const std::string& locPrefix, RouteDecision& decision) const {
-	std::string fsRoot = config.getLocationRoot(locPrefix);
-	std::string rel = normPath.substr(locPrefix.size());
+	const std::map<std::string, LocationConfig>& locations = config.getLocation();
+	bool hasLocation = locations.find(locPrefix) != locations.end();
+
+	std::string fsRoot = hasLocation ? config.getLocationRoot(locPrefix) : config.getRoot();
+	std::string rel;
+	if (locPrefix == "/" || !hasLocation)
+		rel = normPath;
+	else if (normPath.size() >= locPrefix.size())
+		rel = normPath.substr(locPrefix.size());
+	else
+		rel = "/";
 	if (rel.empty()) rel = "/";
 	std::string fsPath = utils::join(fsRoot, rel);
 
@@ -152,8 +164,7 @@ std::string Router::bestLocationPrefix(const Config& config, const std::string& 
 		}
 	}
 	if (bestLen == 0 && !config.getLocation().empty()) {
-		if (config.getLocation().find("/") != config.getLocation().end()) return std::string("/");
-		return config.getLocation().begin()->first;
+		return std::string("/");
 	}
 
 	return best;
