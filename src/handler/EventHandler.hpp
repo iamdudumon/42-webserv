@@ -40,7 +40,7 @@ namespace handler {
 			std::map<int, http::Parser*> _parsers;
 			std::map<int, const config::Config*> _cgiClientConfigs;
 
-			http::Parser* ensureParser(int);
+			http::Parser* ensureParser(int, const config::Config*);
 			std::string readSocket(int) const;
 			Result handleClientEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 			Result handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);

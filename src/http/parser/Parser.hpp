@@ -2,6 +2,7 @@
 #ifndef HTTP_PARSER_HPP
 #define HTTP_PARSER_HPP
 
+#include <cstddef>
 #include <string>
 
 #include "../model/Packet.hpp"
@@ -21,6 +22,7 @@ namespace http {
 			Packet* _packet;
 			bool _complete;
 			bool _inputEnded;
+			size_t _maxBodySize;
 
 			Parser(const Parser&);
 			Parser& operator=(const Parser&);
@@ -58,6 +60,8 @@ namespace http {
 
 			bool inputEnded() const;
 			void markEndOfInput();
+			size_t getMaxBodySize() const;
+			void setMaxBodySize(size_t);
 
 			Result parse();
 			void append(const std::string&);

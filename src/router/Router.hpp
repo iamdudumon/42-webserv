@@ -19,7 +19,6 @@ namespace router {
 								 std::string&, RouteDecision&) const;
 			bool validateMethod(const config::Config&, const http::Packet&, const std::string&,
 								RouteDecision&) const;
-			bool validateBodySize(const config::Config&, const http::Packet&, RouteDecision&) const;
 			bool decideResource(const config::Config&, const std::string&, const std::string&,
 								RouteDecision&) const;
 			std::string parseQueryString(const std::string&) const;

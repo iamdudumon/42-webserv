@@ -22,6 +22,10 @@ namespace http {
 									  http::StatusCode::BadRequest);
 			throw;
 		}
+		size_t currentSize = parser->_packet->getBody().getData().size();
+		if (currentSize + chunk.size() > parser->_maxBodySize) {
+			throw ParserException("Payload too large", http::StatusCode::RequestEntityTooLarge);
+		}
 		parser->_packet->appendBody(chunk.data(), chunk.size());
 		_remain = 0;
 		_done = true;

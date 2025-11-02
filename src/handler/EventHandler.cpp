@@ -5,6 +5,7 @@
 
 #include <cerrno>
 
+#include "../config/Defaults.hpp"
 #include "../handler/utils/response.hpp"
 #include "../http/Enums.hpp"
 #include "../http/model/Packet.hpp"
@@ -67,7 +68,7 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 	Result result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	std::string buffer = readSocket(fd);
-	http::Parser* parser = ensureParser(fd);
+	http::Parser* parser = ensureParser(fd, config);
 
 	if (!buffer.empty()) parser->append(buffer);
 	if (disconnected) parser->markEndOfInput();
@@ -147,10 +148,13 @@ void EventHandler::cleanup(int fd) {
 	_cgiProcessManager.removeCgiProcess(fd);
 }
 
-http::Parser* EventHandler::ensureParser(int fd) {
+http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
 	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
 	if (it == _parsers.end()) {
 		http::Parser* parser = new http::Parser();
+		size_t maxBodySize = static_cast<size_t>(config ? config->getClientMaxBodySize()
+														: config::defaults::CLIENT_MAX_BODY_SIZE);
+		parser->setMaxBodySize(maxBodySize);
 		_parsers.insert(std::make_pair(fd, parser));
 		return parser;
 	}
