@@ -47,9 +47,11 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config
 	std::string rawResponse;
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-		rawResponse = config ? utils::makeCgiResponse(cgiOutput) : utils::makeErrorResponse();
+		rawResponse = config
+						  ? utils::makeCgiResponse(cgiOutput)
+						  : utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
 	} catch (const handler::Exception&) {
-		rawResponse = utils::makeErrorResponse();
+		rawResponse = utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd);
 	_cgiClientConfigs.erase(clientFd);
@@ -75,23 +77,21 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 			case http::Parser::Result::Incomplete:
 				break;
 			case http::Parser::Result::Error: {
-				const std::string& body =
-					parseResult.errorMessage.empty()
-						? http::StatusCode::to_reasonPhrase(parseResult.errorCode)
-						: parseResult.errorMessage;
+				const bool hasMessage = !parseResult.errorMessage.empty();
+				const std::string& fallbackBody = parseResult.errorMessage;
+				const std::string fallbackContentType =
+					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
+							   : std::string();
 				http::Packet errorPacket =
-					utils::makePlainResponse(parseResult.errorCode, body,
-											 http::ContentType::to_string(
-												 http::ContentType::CONTENT_TEXT_PLAIN));
+					utils::makeErrorPacket(parseResult.errorCode, config, fallbackBody,
+										   fallbackContentType);
 				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
-					http::Packet errorPacket = utils::makePlainResponse(
-						http::StatusCode::InternalServerError,
-						http::StatusCode::to_reasonPhrase(http::StatusCode::InternalServerError),
-						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+					http::Packet errorPacket =
+						utils::makeErrorPacket(http::StatusCode::InternalServerError, config);
 					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 					break;
 				}
