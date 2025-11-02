@@ -17,10 +17,9 @@ std::string ErrorBuilder::joinAllowMethods(const std::vector<std::string>& metho
 
 http::Packet ErrorBuilder::build(const router::RouteDecision& decision, const http::Packet&,
 								 const config::Config& config) const {
-	http::Packet response =
-		utils::makeErrorPacket(decision.status, &config,
-							   http::StatusCode::to_reasonPhrase(decision.status),
-							   http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+	http::Packet response = utils::makeErrorResponse(
+		decision.status, &config, http::StatusCode::to_reasonPhrase(decision.status),
+		http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
 	std::string allow = joinAllowMethods(decision.allowMethods);
 	if (!allow.empty()) response.addHeader("Allow", allow);
 	return response;

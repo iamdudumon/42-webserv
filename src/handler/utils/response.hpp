@@ -2,6 +2,7 @@
 #ifndef HANDLER_UTILS_RESPONSE_HPP
 #define HANDLER_UTILS_RESPONSE_HPP
 
+#include <cstring>
 #include <string>
 
 #include "../../config/model/Config.hpp"
@@ -34,8 +35,8 @@ namespace handler {
 			return response;
 		}
 
-		inline http::Packet makeErrorPacket(
-			http::StatusCode::Value status, const config::Config* config,
+		inline http::Packet makeErrorResponse(
+			http::StatusCode::Value status, const config::Config* config = NULL,
 			const std::string& fallbackBody = std::string(),
 			const std::string& fallbackContentType = std::string()) {
 			std::string body = fallbackBody;
@@ -75,21 +76,13 @@ namespace handler {
 			return response;
 		}
 
-		inline std::string makeErrorResponse(
-			http::StatusCode::Value status, const config::Config* config = NULL,
-			const std::string& fallbackBody = std::string(),
-			const std::string& fallbackContentType = std::string()) {
-			http::Packet packet =
-				makeErrorPacket(status, config, fallbackBody, fallbackContentType);
-			return http::Serializer::serialize(packet);
-		}
-
-		inline std::string makeCgiResponse(std::string& cgiOutput) {
+		inline std::string makeCgiResponse(const std::string& cgiOutput) {
 			size_t headerEnd = cgiOutput.find("\r\n\r\n");
-			std::string httpHeader;
-			if (headerEnd != std::string::npos) {
-				httpHeader = cgiOutput.substr(0, headerEnd);
+			if (headerEnd == std::string::npos) {
+				throw handler::Exception();
 			}
+			std::string httpHeader = cgiOutput.substr(0, headerEnd);
+			std::string body = cgiOutput.substr(headerEnd + 4);
 			std::string statusLine;
 			size_t statusPos = httpHeader.find("Status: ");
 			if (statusPos != std::string::npos) {
@@ -97,13 +90,19 @@ namespace handler {
 				std::string statusStr = httpHeader.substr(statusPos + 8, lineEnd - (statusPos + 8));
 				http::StatusCode::Value statusCode =
 					static_cast<http::StatusCode::Value>(str_toint(statusStr));
-				cgiOutput.erase(0, lineEnd + 2);
 				statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
 							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
+				httpHeader.erase(statusPos, lineEnd - statusPos + 2);
 			} else {
 				throw handler::Exception();
 			}
-			return statusLine + cgiOutput;
+			httpHeader +=
+				("\r\n"
+				 "Content-Length: " +
+				 int_tostr(body.size()) +
+				 "\r\n"
+				 "Server: webserv\r\n");
+			return statusLine + httpHeader + "\r\n" + body;
 		}
 	}  // namespace utils
 }  // namespace handler

@@ -9,10 +9,10 @@ http::Packet FileBuilder::build(const router::RouteDecision& decision, const htt
 								const config::Config& config) const {
 	std::string fileData;
 	if (!utils::loadPageContent(decision.fsPath, fileData)) {
-		return utils::makeErrorPacket(http::StatusCode::NotFound, &config,
-									  http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
-									  http::ContentType::to_string(
-										  http::ContentType::CONTENT_TEXT_PLAIN));
+		return utils::makeErrorResponse(
+			http::StatusCode::NotFound, &config,
+			http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
+			http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
 	}
 
 	http::StatusLine statusLine = {"HTTP/1.1", decision.status,
