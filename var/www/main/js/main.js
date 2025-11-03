@@ -105,7 +105,6 @@ async function loadFileList() {
     try {
         const response = await fetch('/cgi-bin/list_files.py');
         const contentType = response.headers.get('content-type') || '';
-		console.log(response)
         // 서버가 에러 페이지(HTML)를 직접 반환한 경우 전체 문서로 렌더링
         if (!response.ok || !contentType.includes('application/json')) {
             const html = await response.text();
