@@ -16,7 +16,7 @@ namespace http {
 		} catch (const NeedMoreInput&) {
 			if (parser->inputEnded())
 				throw ParserException("Malformed request: unexpected end of request line",
-									  http::StatusCode::BadRequest);
+									  StatusCode::BadRequest);
 			throw;
 		}
 		std::string t1, t2, rest;
@@ -25,12 +25,16 @@ namespace http {
 		std::getline(iss, rest);
 		if (!rest.empty() && rest[0] == ' ') rest.erase(0, 1);
 
-		if (http::Method::to_value(t1) != http::Method::UNKNOWN_METHOD) {
-			http::StartLine startLine = {http::Method::to_value(t1), t2, rest};
+		Method::Value method = Method::to_value(t1);
+		if (method != Method::UNKNOWN_METHOD) {
+			StartLine startLine = {method, t2, rest};
 			parser->_packet = new Packet(startLine, Header(), Body());
-		} else {
-			http::StatusLine statusLine = {t1, http::StatusCode::to_value(t2), rest};
+		} else if (t1.size() >= 5 && t1.compare(0, 5, "HTTP/") == 0) {
+			StatusLine statusLine = {t1, StatusCode::to_value(t2), rest};
 			parser->_packet = new Packet(statusLine, Header(), Body());
+		} else {
+			StartLine startLine = {Method::UNKNOWN_METHOD, t2, rest};
+			parser->_packet = new Packet(startLine, Header(), Body());
 		}
 		_done = true;
 	}

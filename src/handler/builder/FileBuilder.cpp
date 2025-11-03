@@ -1,26 +1,20 @@
 // FileBuilder.cpp
 #include "FileBuilder.hpp"
 
-#include <fstream>
-#include <sstream>
-
 #include "../utils/response.hpp"
 
 using namespace handler::builder;
 
 http::Packet FileBuilder::build(const router::RouteDecision& decision, const http::Packet&,
-								const config::Config&) const {
-	std::ifstream ifs(decision.fsPath.c_str(), std::ios::in | std::ios::binary);
-	if (!ifs.is_open()) {
-		return utils::makePlainResponse(
-			http::StatusCode::NotFound,
+								const config::Config& config) const {
+	std::string fileData;
+	if (!utils::loadPageContent(decision.fsPath, fileData)) {
+		return utils::makeErrorResponse(
+			http::StatusCode::NotFound, &config,
 			http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
 			http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
 	}
 
-	std::ostringstream ss;
-	ss << ifs.rdbuf();
-	std::string fileData = ss.str();
 	http::StatusLine statusLine = {"HTTP/1.1", decision.status,
 								   http::StatusCode::to_reasonPhrase(decision.status)};
 	http::Packet response(statusLine, http::Header(), http::Body());

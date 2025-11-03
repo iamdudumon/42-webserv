@@ -70,17 +70,6 @@ bool Router::validateMethod(const Config& config, const http::Packet& request,
 	return false;
 }
 
-bool Router::validateBodySize(const Config& config, const http::Packet& request,
-							  RouteDecision& decision) const {
-	if (request.getStartLine().method != http::Method::POST) return true;
-	if (request.getBody().getLength() <= static_cast<size_t>(config.getClientMaxBodySize()))
-		return true;
-
-	decision.action = RouteDecision::Error;
-	decision.status = http::StatusCode::RequestEntityTooLarge;
-	return false;
-}
-
 bool Router::decideResource(const Config& config, const std::string& normPath,
 							const std::string& locPrefix, RouteDecision& decision) const {
 	const std::map<std::string, LocationConfig>& locations = config.getLocation();
@@ -183,7 +172,6 @@ RouteDecision Router::route(const http::Packet& request, const Config& config) c
 	decision.queryString = parseQueryString(request.getStartLine().target);
 
 	if (!validateMethod(config, request, locPrefix, decision)) return decision;
-	if (!validateBodySize(config, request, decision)) return decision;
 	if (!decideResource(config, normPath, locPrefix, decision)) return decision;
 
 	return decision;

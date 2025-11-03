@@ -1,6 +1,7 @@
 // Parser.cpp
 #include "Parser.hpp"
 
+#include <limits>
 #include <sstream>
 
 #include "exception/NeedMoreInput.hpp"
@@ -13,11 +14,24 @@ namespace http {
 		_pos(0),
 		_packet(NULL),
 		_complete(false),
-		_inputEnded(false) {}
+		_inputEnded(false),
+		_maxBodySize(std::numeric_limits<size_t>::max()) {}
 
 	Parser::~Parser() {
 		delete _currentState;
 		if (_packet) delete _packet;
+	}
+
+	void Parser::markEndOfInput() {
+		_inputEnded = true;
+	}
+
+	bool Parser::inputEnded() const {
+		return _inputEnded;
+	}
+
+	void Parser::setMaxBodySize(size_t maxSize) {
+		_maxBodySize = maxSize;
 	}
 
 	Parser::Result Parser::parse() {
@@ -69,14 +83,6 @@ namespace http {
 	void Parser::append(const std::string& chunk) {
 		_rawData.append(chunk);
 		if (!chunk.empty()) _inputEnded = false;
-	}
-
-	void Parser::markEndOfInput() {
-		_inputEnded = true;
-	}
-
-	bool Parser::inputEnded() const {
-		return _inputEnded;
 	}
 
 	void Parser::reset() {

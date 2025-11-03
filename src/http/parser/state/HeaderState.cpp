@@ -77,6 +77,9 @@ namespace http {
 			}
 			contentLength = str_toint(lengthStr);
 		}
+		if (contentLength > parser->_maxBodySize)
+			throw ParserException("Payload too large", http::StatusCode::RequestEntityTooLarge);
+
 		http::ContentType::Value contentType =
 			http::ContentType::to_value(parser->_packet->getHeader().get("Content-Type"));
 

@@ -73,6 +73,12 @@ namespace http {
 	}
 
 	void ChunkedBodyState::readChunkData(Parser* parser) {
+		size_t currentSize = parser->_packet->getBody().getData().size();
+		if (_currentChunkSize > parser->_maxBodySize ||
+			currentSize + _currentChunkSize > parser->_maxBodySize) {
+			throw ParserException("Payload too large", http::StatusCode::RequestEntityTooLarge);
+		}
+
 		std::string data;
 		try {
 			data = parser->readBytes(_currentChunkSize);

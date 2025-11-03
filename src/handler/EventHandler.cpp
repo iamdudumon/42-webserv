@@ -5,6 +5,7 @@
 
 #include <cerrno>
 
+#include "../config/Defaults.hpp"
 #include "../handler/utils/response.hpp"
 #include "../http/Enums.hpp"
 #include "../http/model/Packet.hpp"
@@ -47,9 +48,13 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config
 	std::string rawResponse;
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-		rawResponse = config ? utils::makeCgiResponse(cgiOutput) : utils::makeErrorResponse();
+		rawResponse =
+			config ? utils::makeCgiResponse(cgiOutput)
+				   : http::Serializer::serialize(
+						 utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	} catch (const handler::Exception&) {
-		rawResponse = utils::makeErrorResponse();
+		rawResponse = http::Serializer::serialize(
+			utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd);
 	_cgiClientConfigs.erase(clientFd);
@@ -63,7 +68,7 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 	Result result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	std::string buffer = readSocket(fd);
-	http::Parser* parser = ensureParser(fd);
+	http::Parser* parser = ensureParser(fd, config);
 
 	if (!buffer.empty()) parser->append(buffer);
 	if (disconnected) parser->markEndOfInput();
@@ -75,23 +80,21 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 			case http::Parser::Result::Incomplete:
 				break;
 			case http::Parser::Result::Error: {
-				const std::string& body =
-					parseResult.errorMessage.empty()
-						? http::StatusCode::to_reasonPhrase(parseResult.errorCode)
-						: parseResult.errorMessage;
+				const bool hasMessage = !parseResult.errorMessage.empty();
+				const std::string& fallbackBody = parseResult.errorMessage;
+				const std::string fallbackContentType =
+					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
+							   : std::string();
 				http::Packet errorPacket =
-					utils::makePlainResponse(parseResult.errorCode, body,
-											 http::ContentType::to_string(
-												 http::ContentType::CONTENT_TEXT_PLAIN));
+					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
+											 fallbackContentType);
 				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
-					http::Packet errorPacket = utils::makePlainResponse(
-						http::StatusCode::InternalServerError,
-						http::StatusCode::to_reasonPhrase(http::StatusCode::InternalServerError),
-						http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+					http::Packet errorPacket =
+						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
 					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 					break;
 				}
@@ -145,10 +148,13 @@ void EventHandler::cleanup(int fd) {
 	_cgiProcessManager.removeCgiProcess(fd);
 }
 
-http::Parser* EventHandler::ensureParser(int fd) {
+http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
 	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
 	if (it == _parsers.end()) {
 		http::Parser* parser = new http::Parser();
+		size_t maxBodySize = static_cast<size_t>(config ? config->getClientMaxBodySize()
+														: config::defaults::CLIENT_MAX_BODY_SIZE);
+		parser->setMaxBodySize(maxBodySize);
 		_parsers.insert(std::make_pair(fd, parser));
 		return parser;
 	}

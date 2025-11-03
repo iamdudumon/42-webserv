@@ -11,7 +11,7 @@ Config::Config() :
 	_listen(-1),
 	_auto_index(false),
 	_client_max_body_size(defaults::CLIENT_MAX_BODY_SIZE),
-	_index(defaults::INDEX()) {}
+	_index() {}
 
 Config::Config(const Config& other) {
 	*this = other;
