@@ -52,25 +52,32 @@ namespace handler {
 					loaded = true;
 				}
 			}
-
 			if (!loaded) {
-				std::string defaultPath = "var/www/errors/" + int_tostr(status) + ".html";
-				if (loadPageContent(defaultPath, body)) {
-					contentType = "text/html";
-					loaded = true;
-				}
-			}
-
-			if (!loaded) {
-				if (body.empty()) body = http::StatusCode::to_reasonPhrase(status);
-				if (contentType.empty()) contentType = "text/plain";
-			} else if (contentType.empty()) {
+				std::string reason = http::StatusCode::to_reasonPhrase(status);
+				std::string message =
+					fallbackBody.empty() ? "요청을 처리할 수 없습니다." : fallbackBody;
+				body =
+					std::string("<!DOCTYPE html><html><head><meta charset=\"utf-8\">") + "<title>" +
+					int_tostr(status) + " " + reason + "</title>" +
+					"<style>"
+					"body{font-family:Arial,'Noto Sans KR',sans-serif;background:#f6f7fb;"
+					"color:#333;display:flex;align-items:center;justify-content:center;"
+					"min-height:100vh;margin:0;}"
+					".box{background:#fff;border-radius:18px;padding:48px 56px;text-align:center;"
+					"box-shadow:0 12px 36px rgba(0,0,0,0.12);max-width:520px;}"
+					".code{font-size:4rem;font-weight:900;margin-bottom:0.4em;color:#5b86e5;}"
+					".title{font-size:1.8rem;font-weight:700;margin-bottom:0.6em;}"
+					".msg{font-size:1.05rem;line-height:1.6;color:#555;word-break:keep-all;}"
+					"</style></head><body><div class=\"box\">" +
+					"<div class=\"code\">" + int_tostr(status) + "</div>" +
+					"<div class=\"title\">" + reason + "</div>" + "<div class=\"msg\">" + message +
+					"</div>" + "</div></body></html>";
 				contentType = "text/html";
-			}
+			} else if (contentType.empty())
+				contentType = "text/html";
 
-			http::StatusLine statusLine = {"HTTP/1.1", status,
-										   http::StatusCode::to_reasonPhrase(status)};
-			http::Packet response(statusLine, http::Header(), http::Body());
+			http::Packet response({"HTTP/1.1", status, http::StatusCode::to_reasonPhrase(status)},
+								  http::Header(), http::Body());
 			if (!contentType.empty()) response.addHeader("Content-Type", contentType);
 			if (!body.empty()) response.appendBody(body.c_str(), body.size());
 			return response;
