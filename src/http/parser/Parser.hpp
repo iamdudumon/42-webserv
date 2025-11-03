@@ -60,7 +60,6 @@ namespace http {
 
 			bool inputEnded() const;
 			void markEndOfInput();
-			size_t getMaxBodySize() const;
 			void setMaxBodySize(size_t);
 
 			Result parse();

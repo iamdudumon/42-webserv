@@ -22,6 +22,18 @@ namespace http {
 		if (_packet) delete _packet;
 	}
 
+	void Parser::markEndOfInput() {
+		_inputEnded = true;
+	}
+
+	bool Parser::inputEnded() const {
+		return _inputEnded;
+	}
+
+	void Parser::setMaxBodySize(size_t maxSize) {
+		_maxBodySize = maxSize;
+	}
+
 	Parser::Result Parser::parse() {
 		Result outcome;
 
@@ -73,14 +85,6 @@ namespace http {
 		if (!chunk.empty()) _inputEnded = false;
 	}
 
-	void Parser::markEndOfInput() {
-		_inputEnded = true;
-	}
-
-	bool Parser::inputEnded() const {
-		return _inputEnded;
-	}
-
 	void Parser::reset() {
 		delete _currentState;
 		_currentState = new PacketLineState();
@@ -107,13 +111,5 @@ namespace http {
 		std::string chunk = _rawData.substr(_pos, n);
 		_pos += n;
 		return chunk;
-	}
-
-	void Parser::setMaxBodySize(size_t maxSize) {
-		_maxBodySize = maxSize;
-	}
-
-	size_t Parser::getMaxBodySize() const {
-		return _maxBodySize;
 	}
 }  // namespace http
