@@ -6,7 +6,7 @@
 #include <cerrno>
 
 #include "../config/Defaults.hpp"
-#include "../handler/utils/response.hpp"
+#include "../handler/response/Response.hpp"
 #include "../http/Enums.hpp"
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
@@ -49,12 +49,13 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		rawResponse =
-			config ? utils::makeCgiResponse(cgiOutput)
-				   : http::Serializer::serialize(
-						 utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
+			config
+				? response::makeCgiResponse(cgiOutput)
+				: http::Serializer::serialize(
+					  response::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	} catch (const handler::Exception&) {
 		rawResponse = http::Serializer::serialize(
-			utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
+			response::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd);
 	_cgiClientConfigs.erase(clientFd);
@@ -86,15 +87,15 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
 							   : std::string();
 				http::Packet errorPacket =
-					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
-											 fallbackContentType);
+					response::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
+												fallbackContentType);
 				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
 					http::Packet errorPacket =
-						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
+						response::makeErrorResponse(http::StatusCode::InternalServerError, config);
 					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 					break;
 				}

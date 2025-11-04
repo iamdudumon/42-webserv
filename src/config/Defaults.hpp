@@ -10,9 +10,6 @@ namespace config {
 		inline const char* SERVER_NAME() {
 			return "_";
 		}
-		inline const char* INDEX() {
-			return "index.html";
-		}
 		static const long long CLIENT_MAX_BODY_SIZE = 1024 * 1024;
 		static const long long LIMIT_CLIENT_MAX_BODY_SIZE = 2LL * 1024 * 1024 * 1024;  // 2GB
 	}
