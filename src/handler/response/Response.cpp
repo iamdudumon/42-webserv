@@ -3,7 +3,7 @@
 using namespace handler;
 
 http::Packet response::makePlainResponse(http::StatusCode::Value status, const std::string& body,
-							   const std::string& contentType) {
+										 const std::string& contentType) {
 	http::StatusLine statusLine = {"HTTP/1.1", status, http::StatusCode::to_reasonPhrase(status)};
 	http::Packet response(statusLine, http::Header(), http::Body());
 

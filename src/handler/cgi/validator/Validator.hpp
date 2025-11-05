@@ -17,12 +17,18 @@ namespace handler {
 					NONE,
 					INVALID_FORMAT,
 				} error;
+				CgiOutput() :
+					httpHeader(""),
+					body(""),
+					statusCode(http::StatusCode::UnknownStatus),
+					error(NONE) {}
 		};
 
 		class OutputValidator {
 			private:
 				OutputValidator() {}
 				~OutputValidator() {}
+
 			public:
 				static CgiOutput validateCgiOutput(const std::string&);
 		};
