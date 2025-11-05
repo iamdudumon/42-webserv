@@ -1,7 +1,7 @@
 // FileBuilder.cpp
 #include "FileBuilder.hpp"
 
-#include "../response/Response.hpp"
+#include "../utils/response.hpp"
 
 using namespace handler::builder;
 
@@ -9,7 +9,7 @@ http::Packet FileBuilder::build(const router::RouteDecision& decision, const htt
 								const config::Config& config) const {
 	std::string fileData;
 	if (!utils::loadPageContent(decision.fsPath, fileData)) {
-		return response::makeErrorResponse(
+		return utils::makeErrorResponse(
 			http::StatusCode::NotFound, &config,
 			http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
 			http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));

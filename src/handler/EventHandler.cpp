@@ -6,12 +6,13 @@
 #include <cerrno>
 
 #include "../config/Defaults.hpp"
-#include "../handler/response/Response.hpp"
+#include "../handler/utils/response.hpp"
 #include "../http/Enums.hpp"
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
-#include "cgi/Executor.hpp"
+#include "cgi/execute/Executor.hpp"
+#include "cgi/response/Responder.hpp"
 
 using namespace handler;
 
@@ -50,13 +51,12 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		rawResponse =
-			config
-				? response::makeCgiResponse(cgiOutput)
-				: http::Serializer::serialize(
-					  response::makeErrorResponse(http::StatusCode::InternalServerError, config));
+			config ? cgi::Responder::makeCgiResponse(cgiOutput)
+				   : http::Serializer::serialize(
+						 utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	} catch (const handler::Exception&) {
 		rawResponse = http::Serializer::serialize(
-			response::makeErrorResponse(http::StatusCode::InternalServerError, config));
+			utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 	_cgiClientConfigs.erase(clientFd);
@@ -88,15 +88,15 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
 							   : std::string();
 				http::Packet errorPacket =
-					response::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
-												fallbackContentType);
+					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
+											 fallbackContentType);
 				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
 					http::Packet errorPacket =
-						response::makeErrorResponse(http::StatusCode::InternalServerError, config);
+						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
 					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 					break;
 				}

@@ -1,8 +1,8 @@
-#include "Validator.hpp"
+#include "Responder.hpp"
 
 using namespace handler::cgi;
 
-CgiOutput OutputValidator::validateCgiOutput(const std::string& cgiResult) {
+Responder::CgiOutput Responder::parseCgiOutput(const std::string& cgiResult) {
 	CgiOutput output;
 
 	size_t headerEnd = cgiResult.find("\r\n\r\n");
@@ -40,4 +40,30 @@ CgiOutput OutputValidator::validateCgiOutput(const std::string& cgiResult) {
 	output.body = body;
 	output.error = CgiOutput::NONE;
 	return output;
+}
+
+std::string Responder::makeCgiResponse(const std::string& cgiResult) {
+	CgiOutput cgiOutput = Responder::parseCgiOutput(cgiResult);
+	std::string httpHeader = cgiOutput.httpHeader;
+	std::string body = cgiOutput.body;
+	http::StatusCode::Value statusCode = cgiOutput.statusCode;
+
+	if (cgiOutput.error == CgiOutput::INVALID_FORMAT) {
+		throw handler::Exception();
+	}
+
+	size_t lineEnd = httpHeader.find("\r\n", 0);
+	httpHeader.erase(0, lineEnd + 2);
+
+	std::string statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
+							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
+
+	httpHeader +=
+		("\r\n"
+		 "Content-Length: " +
+		 int_tostr(body.size()) +
+		 "\r\n"
+		 "Server: webserv\r\n");
+
+	return statusLine + httpHeader + "\r\n" + body;
 }

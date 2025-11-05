@@ -13,8 +13,8 @@
 #include "builder/ErrorBuilder.hpp"
 #include "builder/FileBuilder.hpp"
 #include "builder/RedirectBuilder.hpp"
-#include "cgi/Executor.hpp"
 #include "cgi/ProcessManager.hpp"
+#include "cgi/execute/Executor.hpp"
 
 namespace router {
 	struct RouteDecision;
