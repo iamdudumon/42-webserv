@@ -76,14 +76,14 @@ void Server::handleEvents() {
 		if (result.response.fd != -1) {
 			sendResponse(result.response.fd, result.response.data);
 			if (result.response.closeAfterSend) {
-				_eventHandler.cleanup(result.response.fd);
+				_eventHandler.cleanup(result.response.fd, _epollManager);
 				_epollManager.remove(result.response.fd);
 			}
 		}
 
 		if (result.closeFd != -1 &&
 			(result.closeFd != result.response.fd || !result.response.closeAfterSend)) {
-			_eventHandler.cleanup(result.closeFd);
+			_eventHandler.cleanup(result.closeFd, _epollManager);
 			_epollManager.remove(result.closeFd);
 		}
 	}

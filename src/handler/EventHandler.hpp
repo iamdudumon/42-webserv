@@ -50,7 +50,7 @@ namespace handler {
 			~EventHandler();
 
 			Result handleEvent(int, uint32_t, const config::Config*, server::EpollManager&);
-			void cleanup(int);
+			void cleanup(int, server::EpollManager&);
 	};
 }  // namespace handler
 

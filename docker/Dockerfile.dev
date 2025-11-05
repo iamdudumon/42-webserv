@@ -1,0 +1,27 @@
+FROM ubuntu:22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        clang-format \
+        curl \
+        ca-certificates \
+        cmake \
+        git && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://github.com/danmar/cppcheck/archive/refs/tags/2.13.0.tar.gz \
+        -o /tmp/cppcheck.tar.gz && \
+    tar xf /tmp/cppcheck.tar.gz -C /tmp && \
+    rm /tmp/cppcheck.tar.gz && \
+    cd /tmp/cppcheck-2.13.0 && \
+    make -j"$(nproc)" CFG="--std=c++98" CXXFLAGS="-O2" FILESDIR=/usr/share/cppcheck/cfg && \
+    make FILESDIR=/usr/share/cppcheck/cfg install && \
+    cd / && rm -rf /tmp/cppcheck-2.13.0
+
+WORKDIR /workspace
+
+CMD ["/bin/bash"]
