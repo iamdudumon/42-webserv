@@ -1,36 +1,45 @@
-TARGET = webserv
-CXX = c++
-CPPFLAGS = -Wall -Wextra -Werror
-STD = -std=c++98
+NAME		:= webserv
+CXX			:= c++
+CXXFLAGS	:= -Wall -Wextra -Werror -std=c++98 -MMD -MP
+LDFLAGS		:=
 
-SRCDIR = src
-OBJDIR = obj
+SRCDIR		:= src
+BUILDDIR	:= obj
 
-SOURCES = $(shell find $(SRCDIR) -name '*.cpp')
+SRC			:= $(shell find $(SRCDIR) -name '*.cpp')
+OBJ			:= $(SRC:$(SRCDIR)/%.cpp=$(BUILDDIR)/%.o)
+DEP			:= $(OBJ:.o=.d)
 
-OBJ = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+.PHONY: all clean fclean re
 
-all: $(TARGET)
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+	CXXFLAGS += -O0 -g -DDEBUG
+endif
 
-$(TARGET): $(OBJ)
-	@$(CXX) $(OBJ) -o $@
-	@echo "build success : $(TARGET)"
+SANITIZE ?= 0
+ifeq ($(SANITIZE),1)
+	CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer
+	LDFLAGS  += -fsanitize=address
+endif
 
+all: $(NAME)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+$(NAME): $(OBJ)
+	$(CXX) $(OBJ) $(LDFLAGS) -o $@
+	@echo "build success : $(NAME)"
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CPPFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 	@echo "compile: $<"
 
-$(OBJDIR):
-	@mkdir -p $(OBJDIR)
-
 clean:
-	@rm -rf $(OBJDIR)
+	@rm -rf $(BUILDDIR)
 
 fclean: clean
-	@rm -f $(TARGET)
+	@rm -f $(NAME)
 
-re : 
-	$(MAKE) fclean
-	$(MAKE) all
+re: fclean all
+
+-include $(DEP)
