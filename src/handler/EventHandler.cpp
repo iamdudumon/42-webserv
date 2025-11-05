@@ -11,8 +11,8 @@
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
-#include "cgi/execute/Executor.hpp"
-#include "cgi/response/Responder.hpp"
+#include "cgi/Executor.hpp"
+#include "cgi/Responder.hpp"
 
 using namespace handler;
 

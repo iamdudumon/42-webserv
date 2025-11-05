@@ -4,9 +4,9 @@
 
 #include <string>
 
-#include "../../../http/Enums.hpp"
-#include "../../../utils/str_utils.hpp"
-#include "../../exception/Exception.hpp"
+#include "../../http/Enums.hpp"
+#include "../../utils/str_utils.hpp"
+#include "../exception/Exception.hpp"
 
 namespace handler {
 	namespace cgi {

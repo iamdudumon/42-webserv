@@ -7,12 +7,12 @@
 
 #include <map>
 
-#include "../../../config/model/Config.hpp"
-#include "../../../http/model/Packet.hpp"
-#include "../../../router/model/RouteDecision.hpp"
-#include "../../../server/epoll/manager/EpollManager.hpp"
-#include "../../exception/Exception.hpp"
-#include "../ProcessManager.hpp"
+#include "../../config/model/Config.hpp"
+#include "../../http/model/Packet.hpp"
+#include "../../router/model/RouteDecision.hpp"
+#include "../../server/epoll/manager/EpollManager.hpp"
+#include "../exception/Exception.hpp"
+#include "ProcessManager.hpp"
 
 namespace handler {
 	namespace cgi {
