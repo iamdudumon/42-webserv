@@ -12,7 +12,6 @@
 #include "../../http/model/Packet.hpp"
 #include "../../server/epoll/manager/EpollManager.hpp"
 #include "../exception/Exception.hpp"
-#include "../utils/response.hpp"
 
 namespace handler {
 	namespace cgi {

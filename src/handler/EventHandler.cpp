@@ -12,6 +12,7 @@
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
 #include "cgi/Executor.hpp"
+#include "cgi/Responder.hpp"
 
 using namespace handler;
 
@@ -50,7 +51,7 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 	try {
 		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 		rawResponse =
-			config ? utils::makeCgiResponse(cgiOutput)
+			config ? cgi::Responder::makeCgiResponse(cgiOutput)
 				   : http::Serializer::serialize(
 						 utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	} catch (const handler::Exception&) {
