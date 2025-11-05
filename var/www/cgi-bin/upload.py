@@ -49,10 +49,10 @@ try:
         sys.exit(0)
     
     filepath = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(filepath):
-        print_header("409 Conflict")
-        print('{"success": false, "error": "이미 존재하는 파일명입니다"}')
-        sys.exit(0)
+    # if os.path.exists(filepath):
+    #     print_header("409 Conflict")
+    #     print('{"success": false, "error": "이미 존재하는 파일명입니다"}')
+    #     sys.exit(0)
     
     # 파일 저장
     with open(filepath, 'wb') as f:

@@ -1,6 +1,8 @@
 // Executor.cpp
 #include "Executor.hpp"
 
+#include <sys/socket.h>
+
 #include "../../utils/str_utils.hpp"
 
 using namespace handler::cgi;
@@ -45,28 +47,31 @@ void Executor::setEnvp(const router::RouteDecision& decision, const http::Packet
 void Executor::execute(const router::RouteDecision& decision, const http::Packet& request,
 					   server::EpollManager& epollManager, cgi::ProcessManager& cgiManager,
 					   int clientFd) {
-	int stdoutPipe[2], stdinPipe[2];
-	if (pipe(stdoutPipe) == -1 || pipe(stdinPipe) == -1) {
+	int stdoutPair[2];
+	int stdinPair[2];
+	if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, stdoutPair) == -1 ||
+		socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, stdinPair) == -1) {
 		throw Exception();
 	}
 
 	pid_t pid = fork();
 	if (pid == -1) {
-		close(stdoutPipe[0]);
-		close(stdoutPipe[1]);
-		close(stdinPipe[0]);
-		close(stdinPipe[1]);
+		close(stdoutPair[0]);
+		close(stdoutPair[1]);
+		close(stdinPair[0]);
+		close(stdinPair[1]);
 		throw Exception();
 	}
 
 	if (pid == 0) {
-		close(stdoutPipe[0]);
-		close(stdinPipe[1]);
-		dup2(stdoutPipe[1], STDOUT_FILENO);
-		dup2(stdoutPipe[1], STDERR_FILENO);
-		close(stdoutPipe[1]);
-		dup2(stdinPipe[0], STDIN_FILENO);
-		close(stdinPipe[0]);
+		close(stdoutPair[0]);
+		close(stdinPair[0]);
+		if (dup2(stdoutPair[1], STDOUT_FILENO) == -1 || dup2(stdoutPair[1], STDERR_FILENO) == -1 ||
+			dup2(stdinPair[1], STDIN_FILENO) == -1) {
+			exit(1);
+		}
+		close(stdoutPair[1]);
+		close(stdinPair[1]);
 
 		setArgv(decision);
 		setEnvp(decision, request);
@@ -74,17 +79,17 @@ void Executor::execute(const router::RouteDecision& decision, const http::Packet
 		execve(_argv[0], _argv.data(), _envp.data());
 		exit(1);
 	}
-	close(stdoutPipe[1]);
-	close(stdinPipe[0]);
 
+	close(stdoutPair[1]);
+	close(stdinPair[1]);
+
+	std::string bodyPayload;
 	if (request.getStartLine().method == http::Method::POST) {
 		const std::vector<unsigned char>& bodyData = request.getBody().getData();
-		if (!bodyData.empty()) {
-			write(stdinPipe[1], bodyData.data(), bodyData.size());
-		}
+		if (!bodyData.empty())
+			bodyPayload.assign(reinterpret_cast<const char*>(bodyData.data()), bodyData.size());
 	}
-	close(stdinPipe[1]);
 
-	epollManager.add(stdoutPipe[0], EPOLLIN | EPOLLET);
-	cgiManager.registerProcess(pid, stdoutPipe[0], clientFd);
+	cgiManager.registerProcess(pid, stdoutPair[0], stdinPair[0], clientFd, bodyPayload,
+							   epollManager);
 }

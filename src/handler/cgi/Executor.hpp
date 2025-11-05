@@ -2,7 +2,6 @@
 #ifndef HANDLER_CGI_EXECUTOR_HPP
 #define HANDLER_CGI_EXECUTOR_HPP
 
-#include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
 
