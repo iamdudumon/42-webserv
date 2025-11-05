@@ -33,13 +33,14 @@ EventHandler::Result EventHandler::handleEvent(int fd, uint32_t events,
 	return handleClientEvent(fd, events, config, epollManager);
 }
 
-EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config::Config* config,
+EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
+												  const config::Config* config,
 												  server::EpollManager& epollManager) {
 	Result result;
 	int clientFd = _cgiProcessManager.getClientFd(fd);
 	if (clientFd == -1) return result;
 
-	_cgiProcessManager.handleCgiEvent(fd, epollManager);
+	_cgiProcessManager.handleCgiEvent(fd, events, epollManager);
 	if (!_cgiProcessManager.isCompleted(clientFd)) return result;
 
 	std::map<int, const config::Config*>::const_iterator it = _cgiClientConfigs.find(clientFd);
@@ -57,7 +58,7 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t, const config
 		rawResponse = http::Serializer::serialize(
 			response::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	}
-	_cgiProcessManager.removeCgiProcess(clientFd);
+	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 	_cgiClientConfigs.erase(clientFd);
 	result.response = Response(clientFd, rawResponse, true);
 	return result;
@@ -139,14 +140,14 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 	return result;
 }
 
-void EventHandler::cleanup(int fd) {
+void EventHandler::cleanup(int fd, server::EpollManager& epollManager) {
 	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
 	if (it != _parsers.end()) {
 		delete it->second;
 		_parsers.erase(it);
 	}
 	_cgiClientConfigs.erase(fd);
-	_cgiProcessManager.removeCgiProcess(fd);
+	_cgiProcessManager.removeCgiProcess(fd, epollManager);
 }
 
 http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
