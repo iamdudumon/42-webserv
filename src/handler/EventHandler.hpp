@@ -2,7 +2,8 @@
 #ifndef HANDLER_EVENTHANDLER_HPP
 #define HANDLER_EVENTHANDLER_HPP
 
-#include <cstdint>
+#include <stdint.h>
+
 #include <map>
 #include <string>
 

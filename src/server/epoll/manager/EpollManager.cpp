@@ -1,6 +1,8 @@
 // EpollManager.cpp
 #include "EpollManager.hpp"
 
+#include <errno.h>
+
 #include "../exception/EpollException.hpp"
 
 using namespace server;

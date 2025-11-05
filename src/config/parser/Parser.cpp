@@ -2,6 +2,7 @@
 #include "Parser.hpp"
 
 #include <cctype>
+#include <cstdlib>
 #include <stdexcept>
 
 #include "../../utils/file_utils.hpp"

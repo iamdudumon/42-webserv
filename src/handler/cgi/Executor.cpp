@@ -3,6 +3,8 @@
 
 #include <sys/socket.h>
 
+#include <cstdlib>
+
 #include "../../utils/str_utils.hpp"
 
 using namespace handler::cgi;
