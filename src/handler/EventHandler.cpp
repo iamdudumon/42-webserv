@@ -11,10 +11,25 @@
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
+#include "../utils/str_utils.hpp"
 #include "cgi/Executor.hpp"
 #include "cgi/Responder.hpp"
 
 using namespace handler;
+
+namespace {
+	bool shouldKeepAlive(const std::string& connectionHeader) {
+		bool keepAlive = true;
+
+		if (!connectionHeader.empty()) {
+			if (connectionHeader == "close")
+				keepAlive = false;
+			else if (connectionHeader == "keep-alive")
+				keepAlive = true;
+		}
+		return keepAlive;
+	}
+}
 
 EventHandler::EventHandler() {}
 
@@ -44,8 +59,13 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 	_cgiProcessManager.handleCgiEvent(fd, events, epollManager);
 	if (!_cgiProcessManager.isCompleted(clientFd)) return result;
 
-	std::map<int, const config::Config*>::const_iterator it = _cgiClientConfigs.find(clientFd);
-	if (it != _cgiClientConfigs.end()) config = it->second;
+	bool keepAlive = false;
+	std::map<int, CgiContext>::iterator ctxIt = _cgiContexts.find(clientFd);
+	if (ctxIt != _cgiContexts.end()) {
+		if (ctxIt->second.config) config = ctxIt->second.config;
+		keepAlive = ctxIt->second.keepAlive;
+		_cgiContexts.erase(ctxIt);
+	}
 
 	std::string rawResponse;
 	try {
@@ -59,8 +79,7 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 			utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
-	_cgiClientConfigs.erase(clientFd);
-	result.response = Response(clientFd, rawResponse, true);
+	result.response = Response(clientFd, rawResponse, !keepAlive);
 	return result;
 }
 
@@ -90,6 +109,7 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				http::Packet errorPacket =
 					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
 											 fallbackContentType);
+				errorPacket.addHeader("Connection", "close");
 				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 				break;
 			}
@@ -97,6 +117,7 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				if (!config) {
 					http::Packet errorPacket =
 						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
+					errorPacket.addHeader("Connection", "close");
 					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
 					break;
 				}
@@ -104,12 +125,14 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				http::Packet httpRequest = parseResult.packet;
 				std::string remainder = parseResult.leftover;
 				bool ended = parseResult.endOfInput;
+				bool keepAlive =
+					shouldKeepAlive(to_lower(httpRequest.getHeader().get("Connection")));
 
 				router::RouteDecision decision = _router.route(httpRequest, *config);
 				if (decision.action == router::RouteDecision::Cgi) {
-					_cgiClientConfigs[fd] = decision.server;
 					cgi::Executor executor;
 					executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
+					_cgiContexts[fd] = CgiContext(decision.server, keepAlive && !ended);
 
 					if (ended) result.closeFd = fd;
 					if (!remainder.empty()) {
@@ -122,7 +145,10 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 
 				http::Packet httpResponse =
 					_requestHandler.handle(fd, httpRequest, decision, *config);
-				result.response = Response(fd, http::Serializer::serialize(httpResponse), ended);
+				const bool finalKeepAlive = keepAlive && !ended;
+				httpResponse.addHeader("Connection", finalKeepAlive ? "keep-alive" : "close");
+				result.response =
+					Response(fd, http::Serializer::serialize(httpResponse), !finalKeepAlive);
 
 				if (!remainder.empty()) {
 					parser->append(remainder);
@@ -146,7 +172,7 @@ void EventHandler::cleanup(int fd, server::EpollManager& epollManager) {
 		delete it->second;
 		_parsers.erase(it);
 	}
-	_cgiClientConfigs.erase(fd);
+	_cgiContexts.erase(fd);
 	_cgiProcessManager.removeCgiProcess(fd, epollManager);
 }
 

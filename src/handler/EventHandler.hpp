@@ -39,7 +39,13 @@ namespace handler {
 			RequestHandler _requestHandler;
 			cgi::ProcessManager _cgiProcessManager;
 			std::map<int, http::Parser*> _parsers;
-			std::map<int, const config::Config*> _cgiClientConfigs;
+			struct CgiContext {
+					const config::Config* config;
+					bool keepAlive;
+					CgiContext() : config(NULL), keepAlive(false) {}
+					CgiContext(const config::Config* cfg, bool ka) : config(cfg), keepAlive(ka) {}
+			};
+			std::map<int, CgiContext> _cgiContexts;
 
 			http::Parser* ensureParser(int, const config::Config*);
 			std::string readSocket(int) const;
