@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "../http/serializer/Serializer.hpp"
+#include "Signal.hpp"
 #include "epoll/exception/EpollException.hpp"
 #include "exception/Exception.hpp"
 #include "wrapper/SocketWrapper.hpp"
@@ -105,14 +106,8 @@ void Server::sendResponse(int socketFd, const std::string& rawResponse) {
 }
 
 void Server::run() {
-	struct sigaction sa;
-
-	sa.sa_handler = cgi::ProcessManager::sigchldHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) throw Exception("sigaction failed");
+	signalInstall();
 	_epollManager.init();
-
 	for (std::map<int, config::Config>::iterator it = _configs.begin(); it != _configs.end();
 		 ++it) {
 		initServer(it->first);
