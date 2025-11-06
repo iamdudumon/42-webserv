@@ -14,13 +14,6 @@ namespace {
 	const unsigned int kStdinEvents = EPOLLOUT | EPOLLET;
 }
 
-void ProcessManager::sigchldHandler(int sig) {
-	(void) sig;
-	int status;
-	while (waitpid(-1, &status, WNOHANG) > 0) {
-	}
-}
-
 void ProcessManager::closeFdQuiet(int fd) {
 	if (fd >= 0) close(fd);
 }

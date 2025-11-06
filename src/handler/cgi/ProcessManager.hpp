@@ -68,8 +68,6 @@ namespace handler {
 				ProcessManager() {}
 				~ProcessManager() {}
 
-				static void sigchldHandler(int);
-
 				void handleCgiEvent(int, uint32_t, server::EpollManager&);
 				void registerProcess(pid_t, int, int, int, const std::string&,
 									 server::EpollManager&);
