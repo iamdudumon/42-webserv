@@ -43,21 +43,19 @@ EventHandler::~EventHandler() {
 EventHandler::Result EventHandler::handleEvent(int fd, uint32_t events,
 											   const config::Config* config,
 											   server::EpollManager& epollManager) {
-	if (_cgiProcessManager.isCgiProcess(fd)) {
+	if (_cgiProcessManager.isCgiProcess(fd))
 		return handleCgiEvent(fd, events, config, epollManager);
-	}
 	return handleClientEvent(fd, events, config, epollManager);
 }
 
 EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 												  const config::Config* config,
 												  server::EpollManager& epollManager) {
-	Result result;
 	int clientFd = _cgiProcessManager.getClientFd(fd);
-	if (clientFd == -1) return result;
-
+	if (clientFd == -1) return Result();
 	_cgiProcessManager.handleCgiEvent(fd, events, epollManager);
-	if (!_cgiProcessManager.isCompleted(clientFd)) return result;
+	if (!_cgiProcessManager.isStdout(fd) || !_cgiProcessManager.isCompleted(clientFd))
+		return Result();
 
 	bool keepAlive = false;
 	std::map<int, CgiContext>::iterator ctxIt = _cgiContexts.find(clientFd);
@@ -66,20 +64,20 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 		keepAlive = ctxIt->second.keepAlive;
 		_cgiContexts.erase(ctxIt);
 	}
-
-	std::string rawResponse;
-	try {
-		std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-		rawResponse =
-			config ? cgi::Responder::makeCgiResponse(cgiOutput)
-				   : http::Serializer::serialize(
-						 utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
-	} catch (const handler::Exception&) {
-		rawResponse = http::Serializer::serialize(
-			utils::makeErrorResponse(http::StatusCode::InternalServerError, config));
-	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
-	result.response = Response(clientFd, rawResponse, !keepAlive);
+
+	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
+	Result result;
+	result.fd = clientFd;
+	result.clearPacket();
+	result.raw = (cgiOutput.empty() || !config)
+					 ? http::Serializer::serialize(
+						   utils::makeErrorResponse(http::StatusCode::InternalServerError, config),
+						   keepAlive)
+					 : cgi::Responder::makeCgiResponse(cgiOutput, keepAlive);
+	result.useRaw = true;
+	result.keepAlive = keepAlive;
+	result.closeAfterSend = !keepAlive;
 	return result;
 }
 
@@ -109,24 +107,31 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				http::Packet errorPacket =
 					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
 											 fallbackContentType);
-				errorPacket.addHeader("Connection", "close");
-				result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
+				result.fd = fd;
+				result.setPacket(errorPacket);
+				result.raw.clear();
+				result.useRaw = false;
+				result.keepAlive = false;
+				result.closeAfterSend = true;
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
 					http::Packet errorPacket =
 						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
-					errorPacket.addHeader("Connection", "close");
-					result.response = Response(fd, http::Serializer::serialize(errorPacket), true);
+					result.fd = fd;
+					result.setPacket(errorPacket);
+					result.raw.clear();
+					result.useRaw = false;
+					result.keepAlive = false;
+					result.closeAfterSend = true;
 					break;
 				}
 
 				http::Packet httpRequest = parseResult.packet;
 				std::string remainder = parseResult.leftover;
 				bool ended = parseResult.endOfInput;
-				bool keepAlive =
-					shouldKeepAlive(to_lower(httpRequest.getHeader().get("Connection")));
+				bool keepAlive = shouldKeepAlive(httpRequest.getHeader().get("Connection"));
 
 				router::RouteDecision decision = _router.route(httpRequest, *config);
 				if (decision.action == router::RouteDecision::Cgi) {
@@ -146,9 +151,12 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				http::Packet httpResponse =
 					_requestHandler.handle(fd, httpRequest, decision, *config);
 				const bool finalKeepAlive = keepAlive && !ended;
-				httpResponse.addHeader("Connection", finalKeepAlive ? "keep-alive" : "close");
-				result.response =
-					Response(fd, http::Serializer::serialize(httpResponse), !finalKeepAlive);
+				result.fd = fd;
+				result.setPacket(httpResponse);
+				result.raw.clear();
+				result.useRaw = false;
+				result.keepAlive = finalKeepAlive;
+				result.closeAfterSend = !finalKeepAlive;
 
 				if (!remainder.empty()) {
 					parser->append(remainder);

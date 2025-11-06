@@ -32,7 +32,7 @@ namespace handler {
 				static CgiOutput parseCgiOutput(const std::string& cgiResult);
 
 			public:
-				static std::string makeCgiResponse(const std::string&);
+				static std::string makeCgiResponse(const std::string&, bool keepAlive);
 		};
 	}  // namespace cgi
 }  // namespace handler

@@ -112,8 +112,9 @@ void ProcessManager::handleCgiEvent(int fd, uint32_t events, server::EpollManage
 	if (events & EPOLLOUT) trySendPendingInput(procIt->second, epollManager);
 }
 
-void ProcessManager::registerProcess(pid_t pid, int stdoutFd, int stdinFd, int clientFd,
-									 const std::string& body, server::EpollManager& epollManager) {
+void ProcessManager::registerCgiProcess(pid_t pid, int stdoutFd, int stdinFd, int clientFd,
+										const std::string& body,
+										server::EpollManager& epollManager) {
 	Process process(pid, stdoutFd, stdinFd, clientFd, body);
 	_processes[stdoutFd] = process;
 	_clientToStdout[clientFd] = stdoutFd;
@@ -156,10 +157,7 @@ int ProcessManager::getClientFd(int fd) const {
 
 std::string ProcessManager::getResponse(int stdoutFd) {
 	std::map<int, Process>::iterator procIt = _processes.find(stdoutFd);
-	if (procIt == _processes.end()) throw handler::Exception();
-	std::string output = procIt->second.output;
-	if (output.empty()) throw handler::Exception();
-	return output;
+	return procIt->second.output;
 }
 
 bool ProcessManager::isCgiProcess(int fd) const {
@@ -177,4 +175,8 @@ bool ProcessManager::isCompleted(int clientFd) const {
 	std::map<int, Process>::const_iterator procIt = _processes.find(it->second);
 	if (procIt == _processes.end()) return false;
 	return procIt->second.completed;
+}
+
+bool ProcessManager::isStdout(int fd) const {
+	return _processes.find(fd) != _processes.end();
 }

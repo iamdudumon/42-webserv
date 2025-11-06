@@ -9,7 +9,7 @@
 namespace http {
 	class Serializer {
 		public:
-			static std::string serialize(const Packet&);
+			static std::string serialize(const Packet&, bool keepAlive);
 	};
 }  // namespace http
 

@@ -74,16 +74,19 @@ void Server::handleEvents() {
 		EventHandler::Result result =
 			_eventHandler.handleEvent(eventFd, event.events, findConfig(localPort), _epollManager);
 
-		if (result.response.fd != -1) {
-			sendResponse(result.response.fd, result.response.data);
-			if (result.response.closeAfterSend) {
-				_eventHandler.cleanup(result.response.fd, _epollManager);
-				_epollManager.remove(result.response.fd);
+		if (result.fd != -1) {
+			if (result.useRaw)
+				sendResponse(result.fd, result.raw);
+			else if (result.packet != NULL)
+				sendResponse(result.fd, *result.packet, result.keepAlive);
+
+			if (result.closeAfterSend) {
+				_eventHandler.cleanup(result.fd, _epollManager);
+				_epollManager.remove(result.fd);
 			}
 		}
 
-		if (result.closeFd != -1 &&
-			(result.closeFd != result.response.fd || !result.response.closeAfterSend)) {
+		if (result.closeFd != -1 && (result.closeFd != result.fd || !result.closeAfterSend)) {
 			_eventHandler.cleanup(result.closeFd, _epollManager);
 			_epollManager.remove(result.closeFd);
 		}
@@ -96,13 +99,13 @@ const config::Config* Server::findConfig(int localPort) const {
 	return NULL;
 }
 
-void Server::sendResponse(int socketFd, const http::Packet& httpResponse) {
-	std::string rawResponse = http::Serializer::serialize(httpResponse);
+void Server::sendResponse(int socketFd, const std::string& rawResponse) {
 	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
-void Server::sendResponse(int socketFd, const std::string& rawResponse) {
-	::write(socketFd, rawResponse.c_str(), rawResponse.size());
+void Server::sendResponse(int socketFd, const http::Packet& httpResponse, bool keepAlive) {
+	std::string serialized = http::Serializer::serialize(httpResponse, keepAlive);
+	sendResponse(socketFd, serialized);
 }
 
 void Server::run() {

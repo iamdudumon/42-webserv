@@ -42,7 +42,7 @@ Responder::CgiOutput Responder::parseCgiOutput(const std::string& cgiResult) {
 	return output;
 }
 
-std::string Responder::makeCgiResponse(const std::string& cgiResult) {
+std::string Responder::makeCgiResponse(const std::string& cgiResult, bool keepAlive) {
 	CgiOutput cgiOutput = Responder::parseCgiOutput(cgiResult);
 	std::string httpHeader = cgiOutput.httpHeader;
 	std::string body = cgiOutput.body;
@@ -63,7 +63,9 @@ std::string Responder::makeCgiResponse(const std::string& cgiResult) {
 		 "Content-Length: " +
 		 int_tostr(body.size()) +
 		 "\r\n"
-		 "Server: webserv\r\n");
+		 "Server: webserv\r\n"
+		 "Connection: " +
+		 std::string(keepAlive ? "keep-alive" : "close") + "\r\n");
 
 	return statusLine + httpHeader + "\r\n" + body;
 }
