@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include "../handler/model/EventResult.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "Signal.hpp"
 #include "epoll/exception/EpollException.hpp"
@@ -71,7 +72,7 @@ void Server::handleEvents() {
 		if (getsockname(eventFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
 			localPort = ntohs(addr.sin_port);
 
-		EventHandler::Result result =
+		EventResult result =
 			_eventHandler.handleEvent(eventFd, event.events, findConfig(localPort), _epollManager);
 
 		if (result.fd != -1) {

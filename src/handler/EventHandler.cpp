@@ -40,22 +40,20 @@ EventHandler::~EventHandler() {
 	_parsers.clear();
 }
 
-EventHandler::Result EventHandler::handleEvent(int fd, uint32_t events,
-											   const config::Config* config,
-											   server::EpollManager& epollManager) {
+EventResult EventHandler::handleEvent(int fd, uint32_t events, const config::Config* config,
+									  server::EpollManager& epollManager) {
 	if (_cgiProcessManager.isCgiProcess(fd))
 		return handleCgiEvent(fd, events, config, epollManager);
 	return handleClientEvent(fd, events, config, epollManager);
 }
 
-EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
-												  const config::Config* config,
-												  server::EpollManager& epollManager) {
+EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::Config* config,
+										 server::EpollManager& epollManager) {
 	int clientFd = _cgiProcessManager.getClientFd(fd);
-	if (clientFd == -1) return Result();
+	if (clientFd == -1) return EventResult();
 	_cgiProcessManager.handleCgiEvent(fd, events, epollManager);
 	if (!_cgiProcessManager.isStdout(fd) || !_cgiProcessManager.isCompleted(clientFd))
-		return Result();
+		return EventResult();
 
 	bool keepAlive = false;
 	std::map<int, CgiContext>::iterator ctxIt = _cgiContexts.find(clientFd);
@@ -64,27 +62,24 @@ EventHandler::Result EventHandler::handleCgiEvent(int fd, uint32_t events,
 		keepAlive = ctxIt->second.keepAlive;
 		_cgiContexts.erase(ctxIt);
 	}
+	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
+	std::string rawResponse =
+		(cgiOutput.empty() || !config)
+			? http::Serializer::serialize(
+				  utils::makeErrorResponse(http::StatusCode::InternalServerError, config),
+				  keepAlive)
+			: cgi::Responder::makeCgiResponse(cgiOutput, keepAlive);
+
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 
-	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-	Result result;
-	result.fd = clientFd;
-	result.clearPacket();
-	result.raw = (cgiOutput.empty() || !config)
-					 ? http::Serializer::serialize(
-						   utils::makeErrorResponse(http::StatusCode::InternalServerError, config),
-						   keepAlive)
-					 : cgi::Responder::makeCgiResponse(cgiOutput, keepAlive);
-	result.useRaw = true;
-	result.keepAlive = keepAlive;
-	result.closeAfterSend = !keepAlive;
+	EventResult result;
+	result.setRawResponse(clientFd, rawResponse, keepAlive);
 	return result;
 }
 
-EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
-													 const config::Config* config,
-													 server::EpollManager& epollManager) {
-	Result result;
+EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const config::Config* config,
+											server::EpollManager& epollManager) {
+	EventResult result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	std::string buffer = readSocket(fd);
 	http::Parser* parser = ensureParser(fd, config);
@@ -107,24 +102,14 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 				http::Packet errorPacket =
 					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
 											 fallbackContentType);
-				result.fd = fd;
-				result.setPacket(errorPacket);
-				result.raw.clear();
-				result.useRaw = false;
-				result.keepAlive = false;
-				result.closeAfterSend = true;
+				result.setPacketResponse(fd, errorPacket, false);
 				break;
 			}
 			case http::Parser::Result::Completed: {
 				if (!config) {
 					http::Packet errorPacket =
 						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
-					result.fd = fd;
-					result.setPacket(errorPacket);
-					result.raw.clear();
-					result.useRaw = false;
-					result.keepAlive = false;
-					result.closeAfterSend = true;
+					result.setPacketResponse(fd, errorPacket, false);
 					break;
 				}
 
@@ -150,13 +135,7 @@ EventHandler::Result EventHandler::handleClientEvent(int fd, uint32_t events,
 
 				http::Packet httpResponse =
 					_requestHandler.handle(fd, httpRequest, decision, *config);
-				const bool finalKeepAlive = keepAlive && !ended;
-				result.fd = fd;
-				result.setPacket(httpResponse);
-				result.raw.clear();
-				result.useRaw = false;
-				result.keepAlive = finalKeepAlive;
-				result.closeAfterSend = !finalKeepAlive;
+				result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
 
 				if (!remainder.empty()) {
 					parser->append(remainder);
