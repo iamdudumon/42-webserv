@@ -1,5 +1,10 @@
 #include "Responder.hpp"
 
+#include <cctype>
+
+#include "../../utils/str_utils.hpp"
+#include "../exception/Exception.hpp"
+
 using namespace handler::cgi;
 
 Responder::CgiOutput Responder::parseCgiOutput(const std::string& cgiResult) {
@@ -27,15 +32,34 @@ Responder::CgiOutput Responder::parseCgiOutput(const std::string& cgiResult) {
 	}
 
 	size_t lineEnd = httpHeader.find("\r\n", 0);
-	std::string statusStr = httpHeader.substr(8, lineEnd - 8);
-	http::StatusCode::Value statusCode = static_cast<http::StatusCode::Value>(str_toint(statusStr));
-	std::string statusMessage = http::StatusCode::to_reasonPhrase(statusCode);
-	if (statusMessage == "Unknown Status") {
+	std::string statusLine = trim(httpHeader.substr(8, lineEnd - 8));
+	if (statusLine.empty()) {
+		output.error = CgiOutput::INVALID_FORMAT;
+		return output;
+	}
+	size_t spacePos = statusLine.find(' ');
+	std::string statusCodeToken =
+		spacePos == std::string::npos ? statusLine : statusLine.substr(0, spacePos);
+	if (statusCodeToken.empty()) {
+		output.error = CgiOutput::INVALID_FORMAT;
+		return output;
+	}
+	for (size_t i = 0; i < statusCodeToken.size(); ++i) {
+		if (!std::isdigit(static_cast<unsigned char>(statusCodeToken[i]))) {
+			output.error = CgiOutput::INVALID_FORMAT;
+			return output;
+		}
+	}
+	std::string reason =
+		spacePos == std::string::npos ? std::string() : trim(statusLine.substr(spacePos + 1));
+	int statusInt = str_toint(statusCodeToken);
+	if (statusInt < 100 || statusInt > 599) {
 		output.error = CgiOutput::INVALID_FORMAT;
 		return output;
 	}
 
-	output.statusCode = statusCode;
+	output.statusCode = static_cast<http::StatusCode::Value>(statusInt);
+	output.reasonPhrase = reason;
 	output.httpHeader = httpHeader;
 	output.body = body;
 	output.error = CgiOutput::NONE;
@@ -44,20 +68,16 @@ Responder::CgiOutput Responder::parseCgiOutput(const std::string& cgiResult) {
 
 std::string Responder::makeCgiResponse(const std::string& cgiResult, bool keepAlive) {
 	CgiOutput cgiOutput = Responder::parseCgiOutput(cgiResult);
+	http::StatusCode::Value statusCode = cgiOutput.statusCode;
+	std::string reasonPhrase = cgiOutput.reasonPhrase;
+
+	if (cgiOutput.error == CgiOutput::INVALID_FORMAT) throw handler::Exception();
+	if (reasonPhrase.empty()) reasonPhrase = http::StatusCode::to_reasonPhrase(statusCode);
+
 	std::string httpHeader = cgiOutput.httpHeader;
 	std::string body = cgiOutput.body;
-	http::StatusCode::Value statusCode = cgiOutput.statusCode;
-
-	if (cgiOutput.error == CgiOutput::INVALID_FORMAT) {
-		throw handler::Exception();
-	}
-
-	size_t lineEnd = httpHeader.find("\r\n", 0);
-	httpHeader.erase(0, lineEnd + 2);
-
-	std::string statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " +
-							 http::StatusCode::to_reasonPhrase(statusCode) + "\r\n";
-
+	httpHeader.erase(0, httpHeader.find("\r\n", 0) + 2);
+	std::string statusLine = "HTTP/1.1 " + int_tostr(statusCode) + " " + reasonPhrase + "\r\n";
 	httpHeader +=
 		("\r\n"
 		 "Content-Length: " +
@@ -65,7 +85,6 @@ std::string Responder::makeCgiResponse(const std::string& cgiResult, bool keepAl
 		 "\r\n"
 		 "Server: webserv\r\n"
 		 "Connection: " +
-		 std::string(keepAlive ? "keep-alive" : "close") + "\r\n");
-
-	return statusLine + httpHeader + "\r\n" + body;
+		 std::string(keepAlive ? "keep-alive" : "close") + "\r\n\r\n");
+	return statusLine + httpHeader + body;
 }

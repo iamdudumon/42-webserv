@@ -6,6 +6,7 @@
 #include <sys/epoll.h>
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 
 #include "../handler/model/EventResult.hpp"
@@ -58,6 +59,7 @@ void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.eventCount(); i++) {
 		const epoll_event& event = _epollManager.eventAt(i);
 		int eventFd = event.data.fd;
+		const config::Config* config = NULL;
 
 		if (_serverSockets.find(eventFd) != _serverSockets.end()) {
 			_clientSocket = socket::accept(eventFd, reinterpret_cast<sockaddr*>(&_clientAddress),
@@ -66,14 +68,14 @@ void Server::handleEvents() {
 			continue;
 		}
 
-		int localPort = 0;
 		sockaddr_in addr;
 		socklen_t len = sizeof(addr);
+		std::memset(&addr, 0, sizeof(addr));
 		if (getsockname(eventFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
-			localPort = ntohs(addr.sin_port);
+			config = findConfig(ntohs(addr.sin_port));
 
 		EventResult result =
-			_eventHandler.handleEvent(eventFd, event.events, findConfig(localPort), _epollManager);
+			_eventHandler.handleEvent(eventFd, event.events, config, _epollManager);
 
 		if (result.fd != -1) {
 			if (result.useRaw)

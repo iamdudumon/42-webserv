@@ -5,8 +5,6 @@
 #include <string>
 
 #include "../../http/Enums.hpp"
-#include "../../utils/str_utils.hpp"
-#include "../exception/Exception.hpp"
 
 namespace handler {
 	namespace cgi {
@@ -16,6 +14,7 @@ namespace handler {
 						std::string httpHeader;
 						std::string body;
 						http::StatusCode::Value statusCode;
+						std::string reasonPhrase;
 						enum error {
 							NONE,
 							INVALID_FORMAT,
@@ -24,6 +23,7 @@ namespace handler {
 							httpHeader(""),
 							body(""),
 							statusCode(http::StatusCode::UnknownStatus),
+							reasonPhrase(""),
 							error(NONE) {}
 				};
 
