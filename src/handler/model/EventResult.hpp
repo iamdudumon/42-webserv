@@ -28,7 +28,7 @@ namespace handler {
 			void clearPacket();
 			void setPacketResponse(int, const http::Packet&, bool);
 			void setRawResponse(int, const std::string&, bool);
-			void reset();
+			void reset(int);
 	};
 }  // namespace handler
 

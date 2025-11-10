@@ -149,7 +149,7 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 		break;
 	}
 
-	if (disconnected) result.closeFd = fd;
+	if (disconnected) result.reset(fd);
 	return result;
 }
 

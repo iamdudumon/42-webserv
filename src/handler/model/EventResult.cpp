@@ -65,12 +65,12 @@ void EventResult::setRawResponse(int socketFd, const std::string& value, bool ke
 	closeAfterSend = !keep;
 }
 
-void EventResult::reset() {
-	fd = -1;
+void EventResult::reset(int fd = -1) {
+	this->fd = -1;
 	clearPacket();
 	raw.clear();
 	useRaw = false;
 	keepAlive = false;
 	closeAfterSend = false;
-	closeFd = -1;
+	closeFd = fd;
 }
