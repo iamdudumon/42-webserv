@@ -9,6 +9,8 @@ namespace handler {
 	class EventResult {
 		private:
 			void copyFrom(const EventResult&);
+			void setPacket(const http::Packet&);
+			void clearPacket();
 
 		public:
 			int fd;
@@ -24,8 +26,6 @@ namespace handler {
 			EventResult& operator=(const EventResult&);
 			~EventResult();
 
-			void setPacket(const http::Packet&);
-			void clearPacket();
 			void setPacketResponse(int, const http::Packet&, bool);
 			void setRawResponse(int, const std::string&, bool);
 			void reset(int);

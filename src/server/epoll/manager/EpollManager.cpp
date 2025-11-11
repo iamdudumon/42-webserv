@@ -61,7 +61,7 @@ void EpollManager::add(int fd, unsigned int events) {
 void EpollManager::remove(int fd) {
 	if (_counter.deleteFd(fd)) {
 		if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-			throw EpollException("ctl del");
+			if (errno != EBADF && errno != ENOENT) throw EpollException("ctl del");
 		}
 		close(fd);
 	}

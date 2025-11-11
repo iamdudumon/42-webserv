@@ -89,7 +89,7 @@ void Server::handleEvents() {
 			}
 		}
 
-		if (result.closeFd != -1 && (result.closeFd != result.fd || !result.closeAfterSend)) {
+		if (result.closeFd != -1 && (result.closeFd != result.fd)) {
 			_eventHandler.cleanup(result.closeFd, _epollManager);
 			_epollManager.remove(result.closeFd);
 		}

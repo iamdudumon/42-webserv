@@ -81,10 +81,12 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 											server::EpollManager& epollManager) {
 	EventResult result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
-	std::string buffer = readSocket(fd);
+	bool peerClosed = false;
+	std::string buffer = readSocket(fd, peerClosed);
 	http::Parser* parser = ensureParser(fd, config);
 
 	if (!buffer.empty()) parser->append(buffer);
+	if (peerClosed) disconnected = true;
 	if (disconnected) parser->markEndOfInput();
 	if (buffer.empty() && !disconnected) return result;
 
@@ -176,9 +178,10 @@ http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
 	return it->second;
 }
 
-std::string EventHandler::readSocket(int socketFd) const {
+std::string EventHandler::readSocket(int socketFd, bool& peerClosed) const {
 	char buffer[server::defaults::BUFFER_SIZE] = {0};
 	std::string request;
+	peerClosed = false;
 
 	while (true) {
 		ssize_t readSize = ::read(socketFd, buffer, server::defaults::BUFFER_SIZE);
@@ -186,6 +189,7 @@ std::string EventHandler::readSocket(int socketFd) const {
 			request.append(buffer, readSize);
 			if (readSize < server::defaults::BUFFER_SIZE) break;
 		} else if (readSize == 0) {
+			peerClosed = true;
 			break;
 		} else {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) break;
