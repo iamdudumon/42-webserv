@@ -6,9 +6,12 @@
 #include <sys/epoll.h>
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 
+#include "../handler/model/EventResult.hpp"
 #include "../http/serializer/Serializer.hpp"
+#include "Signal.hpp"
 #include "epoll/exception/EpollException.hpp"
 #include "exception/Exception.hpp"
 #include "wrapper/SocketWrapper.hpp"
@@ -56,6 +59,7 @@ void Server::handleEvents() {
 	for (int i = 0; i < _epollManager.eventCount(); i++) {
 		const epoll_event& event = _epollManager.eventAt(i);
 		int eventFd = event.data.fd;
+		const config::Config* config = NULL;
 
 		if (_serverSockets.find(eventFd) != _serverSockets.end()) {
 			_clientSocket = socket::accept(eventFd, reinterpret_cast<sockaddr*>(&_clientAddress),
@@ -64,25 +68,28 @@ void Server::handleEvents() {
 			continue;
 		}
 
-		int localPort = 0;
 		sockaddr_in addr;
 		socklen_t len = sizeof(addr);
+		std::memset(&addr, 0, sizeof(addr));
 		if (getsockname(eventFd, reinterpret_cast<sockaddr*>(&addr), &len) == 0)
-			localPort = ntohs(addr.sin_port);
+			config = findConfig(ntohs(addr.sin_port));
 
-		EventHandler::Result result =
-			_eventHandler.handleEvent(eventFd, event.events, findConfig(localPort), _epollManager);
+		EventResult result =
+			_eventHandler.handleEvent(eventFd, event.events, config, _epollManager);
 
-		if (result.response.fd != -1) {
-			sendResponse(result.response.fd, result.response.data);
-			if (result.response.closeAfterSend) {
-				_eventHandler.cleanup(result.response.fd, _epollManager);
-				_epollManager.remove(result.response.fd);
+		if (result.fd != -1) {
+			if (result.useRaw)
+				sendResponse(result.fd, result.raw);
+			else if (result.packet != NULL)
+				sendResponse(result.fd, *result.packet, result.keepAlive);
+
+			if (result.closeAfterSend) {
+				_eventHandler.cleanup(result.fd, _epollManager);
+				_epollManager.remove(result.fd);
 			}
 		}
 
-		if (result.closeFd != -1 &&
-			(result.closeFd != result.response.fd || !result.response.closeAfterSend)) {
+		if (result.closeFd != -1 && (result.closeFd != result.fd)) {
 			_eventHandler.cleanup(result.closeFd, _epollManager);
 			_epollManager.remove(result.closeFd);
 		}
@@ -95,24 +102,18 @@ const config::Config* Server::findConfig(int localPort) const {
 	return NULL;
 }
 
-void Server::sendResponse(int socketFd, const http::Packet& httpResponse) {
-	std::string rawResponse = http::Serializer::serialize(httpResponse);
-	::write(socketFd, rawResponse.c_str(), rawResponse.size());
-}
-
 void Server::sendResponse(int socketFd, const std::string& rawResponse) {
 	::write(socketFd, rawResponse.c_str(), rawResponse.size());
 }
 
+void Server::sendResponse(int socketFd, const http::Packet& httpResponse, bool keepAlive) {
+	std::string serialized = http::Serializer::serialize(httpResponse, keepAlive);
+	sendResponse(socketFd, serialized);
+}
+
 void Server::run() {
-	struct sigaction sa;
-
-	sa.sa_handler = cgi::ProcessManager::sigchldHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) throw Exception("sigaction failed");
+	signalInstall();
 	_epollManager.init();
-
 	for (std::map<int, config::Config>::iterator it = _configs.begin(); it != _configs.end();
 		 ++it) {
 		initServer(it->first);

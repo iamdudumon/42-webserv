@@ -3,6 +3,8 @@
 
 #include <sys/socket.h>
 
+#include <cstdlib>
+
 #include "../../utils/str_utils.hpp"
 
 using namespace handler::cgi;
@@ -90,6 +92,6 @@ void Executor::execute(const router::RouteDecision& decision, const http::Packet
 			bodyPayload.assign(reinterpret_cast<const char*>(bodyData.data()), bodyData.size());
 	}
 
-	cgiManager.registerProcess(pid, stdoutPair[0], stdinPair[0], clientFd, bodyPayload,
-							   epollManager);
+	cgiManager.registerCgiProcess(pid, stdoutPair[0], stdinPair[0], clientFd, bodyPayload,
+								  epollManager);
 }

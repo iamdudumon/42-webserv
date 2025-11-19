@@ -76,8 +76,9 @@ namespace handler {
 			} else if (contentType.empty())
 				contentType = "text/html";
 
-			http::Packet response({"HTTP/1.1", status, http::StatusCode::to_reasonPhrase(status)},
-								  http::Header(), http::Body());
+			http::StatusLine statusLine = {"HTTP/1.1", status,
+										   http::StatusCode::to_reasonPhrase(status)};
+			http::Packet response(statusLine, http::Header(), http::Body());
 			if (!contentType.empty()) response.addHeader("Content-Type", contentType);
 			if (!body.empty()) response.appendBody(body.c_str(), body.size());
 			return response;

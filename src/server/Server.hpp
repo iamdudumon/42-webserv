@@ -34,7 +34,7 @@ namespace server {
 			void initServer(int);
 			void loop();
 			void handleEvents();
-			void sendResponse(int, const http::Packet&);
+			void sendResponse(int, const http::Packet&, bool);
 			void sendResponse(int, const std::string&);
 
 		public:
