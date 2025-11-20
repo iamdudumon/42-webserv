@@ -1,9 +1,10 @@
-// AutoIndexBuilder.cpp
 #include "AutoIndexBuilder.hpp"
 
 #include <dirent.h>
 
 #include <sstream>
+
+#include "../../http/response/Factory.hpp"
 
 using namespace handler::builder;
 
@@ -28,7 +29,5 @@ http::Packet AutoIndexBuilder::build(const router::RouteDecision& decision, cons
 	http::Packet response(statusLine, http::Header(), http::Body());
 	std::string html = ss.str();
 
-	response.addHeader("Content-Type", "text/html");
-	if (!html.empty()) response.appendBody(html.c_str(), html.size());
-	return response;
+	return http::response::Factory::create(http::StatusCode::OK, html, "text/html");
 }

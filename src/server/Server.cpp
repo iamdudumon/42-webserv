@@ -2,7 +2,6 @@
 #include "Server.hpp"
 
 #include <arpa/inet.h>
-#include <signal.h>
 #include <sys/epoll.h>
 
 #include <algorithm>
@@ -10,7 +9,7 @@
 #include <iostream>
 
 #include "../handler/model/EventResult.hpp"
-#include "../http/serializer/Serializer.hpp"
+#include "../http/response/Serializer.hpp"
 #include "Signal.hpp"
 #include "epoll/exception/EpollException.hpp"
 #include "exception/Exception.hpp"
@@ -107,7 +106,7 @@ void Server::sendResponse(int socketFd, const std::string& rawResponse) {
 }
 
 void Server::sendResponse(int socketFd, const http::Packet& httpResponse, bool keepAlive) {
-	std::string serialized = http::Serializer::serialize(httpResponse, keepAlive);
+	std::string serialized = http::response::Serializer::serialize(httpResponse, keepAlive);
 	sendResponse(socketFd, serialized);
 }
 

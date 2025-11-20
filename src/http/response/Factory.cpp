@@ -1,12 +1,11 @@
-#include "ResponseFactory.hpp"
+#include "Factory.hpp"
 
-#include "../utils/file_utils.hpp"
-#include "../utils/str_utils.hpp"
+#include "../../utils/file_utils.hpp"
 
 using namespace http;
+using namespace http::response;
 
 namespace {
-
 	bool loadPageContent(const std::string& path, std::string& out) {
 		if (path.empty()) return false;
 		FileInfo file = readFile(path.c_str());
@@ -16,11 +15,11 @@ namespace {
 	}
 }
 
-ResponseFactory::ResponseFactory() {}
-ResponseFactory::~ResponseFactory() {}
+Factory::Factory() {}
+Factory::~Factory() {}
 
-Packet ResponseFactory::create(StatusCode::Value status, const std::string& body,
-							   const std::string& contentType) {
+Packet Factory::create(StatusCode::Value status, const std::string& body,
+					   const std::string& contentType) {
 	StatusLine statusLine = {"HTTP/1.1", status, StatusCode::to_reasonPhrase(status)};
 	Packet response(statusLine, Header(), Body());
 
@@ -29,18 +28,19 @@ Packet ResponseFactory::create(StatusCode::Value status, const std::string& body
 	return response;
 }
 
-Packet ResponseFactory::createFileResponse(StatusCode::Value status, const std::string& body,
-										   const std::string& contentType) {
-	std::string finalContentType = contentType;
+Packet Factory::createFileResponse(StatusCode::Value status, const std::string& path,
+								   const std::string& customContentType) {
+	std::string body;
+	loadPageContent(path, body);
+	std::string finalContentType = customContentType;
 	if (finalContentType.empty()) finalContentType = "application/octet-stream";
 	return create(status, body, finalContentType);
 }
 
-Packet ResponseFactory::createError(StatusCode::Value status, const config::Config* config,
-									const std::string& fallbackBody,
-									const std::string& fallbackContentType) {
-	std::string body = fallbackBody;
-	std::string contentType = fallbackContentType;
+Packet Factory::createError(StatusCode::Value status, const config::Config* config,
+							const std::string& customBody, const std::string& customContentType) {
+	std::string body = customBody;
+	std::string contentType = customContentType;
 	bool loaded = false;
 
 	if (config) {
@@ -53,7 +53,7 @@ Packet ResponseFactory::createError(StatusCode::Value status, const config::Conf
 	}
 	if (!loaded) {
 		std::string reason = StatusCode::to_reasonPhrase(status);
-		std::string message = fallbackBody.empty() ? "요청을 처리할 수 없습니다." : fallbackBody;
+		std::string message = customBody.empty() ? "요청을 처리할 수 없습니다." : customBody;
 		body = std::string("<!DOCTYPE html><html><head><meta charset=\"utf-8\">") + "<title>" +
 			   int_tostr(status) + " " + reason + "</title>" +
 			   "<style>"
@@ -72,11 +72,10 @@ Packet ResponseFactory::createError(StatusCode::Value status, const config::Conf
 		contentType = "text/html";
 	} else if (contentType.empty())
 		contentType = "text/html";
-
 	return create(status, body, contentType);
 }
 
-Packet ResponseFactory::createRedirect(StatusCode::Value status, const std::string& location) {
+Packet Factory::createRedirect(StatusCode::Value status, const std::string& location) {
 	Packet response = create(status);
 	response.addHeader("Location", location);
 	return response;

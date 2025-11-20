@@ -7,9 +7,8 @@
 
 #include "../config/Defaults.hpp"
 #include "../http/Enums.hpp"
-#include "../http/ResponseFactory.hpp"
-#include "../http/model/Packet.hpp"
-#include "../http/serializer/Serializer.hpp"
+#include "../http/response/ResponseFactory.hpp"
+#include "../http/response/Serializer.hpp"
 #include "../server/Defaults.hpp"
 #include "cgi/Executor.hpp"
 
@@ -66,15 +65,16 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 
 	try {
 		if (cgiOutput.empty() || !config)
-			rawResponse = http::Serializer::serialize(
-				http::ResponseFactory::createError(http::StatusCode::InternalServerError, config),
+			rawResponse = http::response::Serializer::serialize(
+				http::response::Factory::createError(http::StatusCode::InternalServerError, config),
 				keepAlive);
 		else
 			rawResponse = _responseBuilder.buildCgi(cgiOutput, keepAlive);
 	} catch (const std::exception&) {
-		rawResponse = http::Serializer::serialize(
-			http::ResponseFactory::createError(http::StatusCode::InternalServerError, config),
-			keepAlive);
+		rawResponse = http::response::Serializer::serialize(
+			http::response::Factory::createError(http::StatusCode::BadRequest, config),
+			keepAlive);	 // Assuming parseResult.keepAlive was a typo and meant keepAlive from this
+						 // scope
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 
@@ -132,8 +132,8 @@ void EventHandler::handleParseError(int fd, const config::Config* config,
 		hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
 				   : std::string();
 	http::Packet errorPacket =
-		http::ResponseFactory::createError(parseResult.errorCode, config, fallbackBody,
-										   fallbackContentType);
+		http::response::Factory::createError(parseResult.errorCode, config, fallbackBody,
+											 fallbackContentType);
 	result.setPacketResponse(fd, errorPacket, false);
 }
 
@@ -143,7 +143,7 @@ EventResult EventHandler::processRequest(int fd, const config::Config* config,
 	EventResult result;
 	if (!config) {
 		http::Packet errorPacket =
-			http::ResponseFactory::createError(http::StatusCode::InternalServerError, config);
+			http::response::Factory::createError(http::StatusCode::InternalServerError, config);
 		result.setPacketResponse(fd, errorPacket, false);
 		return result;
 	}
