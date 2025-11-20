@@ -11,7 +11,6 @@
 #include "../http/model/Packet.hpp"
 #include "../http/serializer/Serializer.hpp"
 #include "../server/Defaults.hpp"
-#include "../utils/str_utils.hpp"
 #include "cgi/Executor.hpp"
 
 using namespace handler;
@@ -99,67 +98,74 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 
 	while (true) {
 		http::Parser::Result parseResult = parser->parse();
-		switch (parseResult.status) {
-			case http::Parser::Result::Incomplete:
-				break;
-			case http::Parser::Result::Error: {
-				const bool hasMessage = !parseResult.errorMessage.empty();
-				const std::string& fallbackBody = parseResult.errorMessage;
-				const std::string fallbackContentType =
-					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
-							   : std::string();
-				http::Packet errorPacket =
-					http::ResponseFactory::createError(parseResult.errorCode, config, fallbackBody,
-													   fallbackContentType);
-				result.setPacketResponse(fd, errorPacket, false);
-				break;
+		if (parseResult.status == http::Parser::Result::Incomplete) {
+			break;
+		} else if (parseResult.status == http::Parser::Result::Error) {
+			handleParseError(fd, config, parseResult, result);
+			break;
+		} else if (parseResult.status == http::Parser::Result::Completed) {
+			EventResult processResult = processRequest(fd, config, epollManager, parseResult);
+			std::string remainder = parseResult.leftover;
+
+			if (processResult.packet != NULL || !processResult.raw.empty()) result = processResult;
+			if (processResult.closeFd != -1) result.closeFd = processResult.closeFd;
+			if (!remainder.empty()) {
+				parser->append(remainder);
+				if (parseResult.endOfInput)
+					parser->markEndOfInput();
+				else
+					continue;
 			}
-			case http::Parser::Result::Completed: {
-				if (!config) {
-					http::Packet errorPacket =
-						http::ResponseFactory::createError(http::StatusCode::InternalServerError,
-														   config);
-					result.setPacketResponse(fd, errorPacket, false);
-					break;
-				}
-
-				http::Packet httpRequest = parseResult.packet;
-				std::string remainder = parseResult.leftover;
-				bool ended = parseResult.endOfInput;
-				bool keepAlive = shouldKeepAlive(httpRequest.getHeader().get("Connection"));
-
-				router::RouteDecision decision = _router.route(httpRequest, *config);
-				if (decision.action == router::RouteDecision::Cgi) {
-					cgi::Executor executor;
-					executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
-					_cgiContexts[fd] = CgiContext(decision.server, keepAlive && !ended);
-
-					if (ended) result.closeFd = fd;
-					if (!remainder.empty()) {
-						parser->append(remainder);
-						if (ended) parser->markEndOfInput();
-						if (!ended) continue;
-					}
-					break;
-				}
-
-				http::Packet httpResponse =
-					_requestHandler.handle(fd, httpRequest, decision, *config);
-				result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
-
-				if (!remainder.empty()) {
-					parser->append(remainder);
-					if (ended) parser->markEndOfInput();
-					if (!ended) continue;
-				}
-				if (ended) result.closeFd = fd;
-				break;
-			}
+			break;
 		}
-		break;
 	}
 
 	if (disconnected) result.reset(fd);
+	return result;
+}
+
+void EventHandler::handleParseError(int fd, const config::Config* config,
+									http::Parser::Result& parseResult, EventResult& result) {
+	const bool hasMessage = !parseResult.errorMessage.empty();
+	const std::string& fallbackBody = parseResult.errorMessage;
+	const std::string fallbackContentType =
+		hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
+				   : std::string();
+	http::Packet errorPacket =
+		http::ResponseFactory::createError(parseResult.errorCode, config, fallbackBody,
+										   fallbackContentType);
+	result.setPacketResponse(fd, errorPacket, false);
+}
+
+EventResult EventHandler::processRequest(int fd, const config::Config* config,
+										 server::EpollManager& epollManager,
+										 http::Parser::Result& parseResult) {
+	EventResult result;
+	if (!config) {
+		http::Packet errorPacket =
+			http::ResponseFactory::createError(http::StatusCode::InternalServerError, config);
+		result.setPacketResponse(fd, errorPacket, false);
+		return result;
+	}
+
+	http::Packet httpRequest = parseResult.packet;
+	bool ended = parseResult.endOfInput;
+	bool keepAlive = shouldKeepAlive(httpRequest.getHeader().get("Connection"));
+
+	router::RouteDecision decision = _router.route(httpRequest, *config);
+	if (decision.action == router::RouteDecision::Cgi) {
+		cgi::Executor executor;
+		executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
+		_cgiContexts[fd] = CgiContext(decision.server, keepAlive && !ended);
+
+		if (ended) result.closeFd = fd;
+		return result;
+	}
+
+	http::Packet httpResponse = _requestHandler.handle(fd, httpRequest, decision, *config);
+	result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
+
+	if (ended) result.closeFd = fd;
 	return result;
 }
 

@@ -38,6 +38,9 @@ namespace handler {
 			EventResult handleClientEvent(int, uint32_t, const config::Config*,
 										  server::EpollManager&);
 			EventResult handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
+			EventResult processRequest(int, const config::Config*, server::EpollManager&,
+									   http::Parser::Result&);
+			void handleParseError(int, const config::Config*, http::Parser::Result&, EventResult&);
 
 		public:
 			EventHandler();
