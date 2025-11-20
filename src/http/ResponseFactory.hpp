@@ -13,7 +13,8 @@ namespace http {
 			ResponseFactory();
 			~ResponseFactory();
 
-			static Packet create(StatusCode::Value, const std::string& = "", const std::string& = "");
+			static Packet create(StatusCode::Value, const std::string& = "",
+								 const std::string& = "");
 
 		public:
 			static Packet createFileResponse(StatusCode::Value, const std::string&,
@@ -21,7 +22,6 @@ namespace http {
 			static Packet createError(StatusCode::Value, const config::Config* = NULL,
 									  const std::string& = "", const std::string& = "");
 			static Packet createRedirect(StatusCode::Value, const std::string&);
-			static std::string createCgiResponse(const std::string&, bool);
 	};
 }  // namespace http
 

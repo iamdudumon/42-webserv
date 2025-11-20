@@ -10,7 +10,7 @@
 #include "../config/model/Config.hpp"
 #include "../http/parser/Parser.hpp"
 #include "../router/Router.hpp"
-#include "RequestHandler.hpp"
+#include "builder/ResponseBuilder.hpp"
 #include "cgi/ProcessManager.hpp"
 #include "model/EventResult.hpp"
 
@@ -22,7 +22,7 @@ namespace handler {
 	class EventHandler {
 		private:
 			router::Router _router;
-			RequestHandler _requestHandler;
+			builder::ResponseBuilder _responseBuilder;
 			cgi::ProcessManager _cgiProcessManager;
 			std::map<int, http::Parser*> _parsers;
 			struct CgiContext {

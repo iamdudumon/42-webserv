@@ -63,19 +63,19 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 
 	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
 	std::string rawResponse;
+
 	try {
 		if (cgiOutput.empty() || !config)
 			rawResponse = http::Serializer::serialize(
 				http::ResponseFactory::createError(http::StatusCode::InternalServerError, config),
 				keepAlive);
 		else
-			rawResponse = http::ResponseFactory::createCgiResponse(cgiOutput, keepAlive);
+			rawResponse = _responseBuilder.buildCgi(cgiOutput, keepAlive);
 	} catch (const std::exception&) {
 		rawResponse = http::Serializer::serialize(
 			http::ResponseFactory::createError(http::StatusCode::InternalServerError, config),
 			keepAlive);
 	}
-
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 
 	EventResult result;
@@ -162,7 +162,7 @@ EventResult EventHandler::processRequest(int fd, const config::Config* config,
 		return result;
 	}
 
-	http::Packet httpResponse = _requestHandler.handle(fd, httpRequest, decision, *config);
+	http::Packet httpResponse = _responseBuilder.build(httpRequest, decision, *config);
 	result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
 
 	if (ended) result.closeFd = fd;
