@@ -57,6 +57,7 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 	if (it != _clients.end()) {
 		if (it->second->getCgiConfig()) config = it->second->getCgiConfig();
 		keepAlive = it->second->isKeepAlive();
+		it->second->setState(client::Client::Sending);
 		// CGI context is part of client, no need to erase explicitly unless we want to reset it
 	}
 
@@ -86,40 +87,70 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 	EventResult result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	bool peerClosed = false;
-	std::string buffer = readSocket(fd, peerClosed);
+
 	client::Client* client = ensureClient(fd, config);
-	http::Parser* parser = client->getParser();
+	if (client->getState() == client::Client::None) client->setState(client::Client::Receiving);
 
-	if (!buffer.empty()) parser->append(buffer);
-	if (peerClosed) disconnected = true;
-	if (disconnected) parser->markEndOfInput();
-	if (buffer.empty() && !disconnected) return result;
+	if (client->getState() == client::Client::Receiving) {
+		std::string buffer = readSocket(fd, peerClosed);
+		http::Parser* parser = client->getParser();
 
-	while (true) {
-		http::Parser::Result parseResult = parser->parse();
-		if (parseResult.status == http::Parser::Result::Incomplete) {
-			break;
-		} else if (parseResult.status == http::Parser::Result::Error) {
-			handleParseError(fd, config, parseResult, result);
-			break;
-		} else if (parseResult.status == http::Parser::Result::Completed) {
-			EventResult processResult = processRequest(fd, config, epollManager, parseResult);
-			std::string remainder = parseResult.leftover;
+		if (!buffer.empty()) parser->append(buffer);
+		if (peerClosed) disconnected = true;
+		if (disconnected) parser->markEndOfInput();
+		if (buffer.empty() && !disconnected) return result;
 
-			if (processResult.packet != NULL || !processResult.raw.empty()) result = processResult;
-			if (processResult.closeFd != -1) result.closeFd = processResult.closeFd;
-			if (!remainder.empty()) {
-				parser->append(remainder);
-				if (parseResult.endOfInput)
-					parser->markEndOfInput();
-				else
-					continue;
+		while (true) {
+			http::Parser::Result parseResult = parser->parse();
+			if (parseResult.status == http::Parser::Result::Incomplete) {
+				break;
+			} else if (parseResult.status == http::Parser::Result::Error) {
+				handleParseError(fd, config, parseResult, result);
+				client->setState(client::Client::Closing);
+				break;
+			} else if (parseResult.status == http::Parser::Result::Completed) {
+				EventResult processResult = processRequest(fd, config, epollManager, parseResult);
+				std::string remainder = parseResult.leftover;
+
+				if (processResult.packet != NULL || !processResult.raw.empty()) {
+					result = processResult;
+					// If we have a response immediately, we are sending (unless it's CGI which sets
+					// Processing) But processRequest sets Processing for CGI. For normal, it
+					// returns response. We need to check if processRequest set state to Processing.
+					if (client->getState() != client::Client::Processing) {
+						client->setState(client::Client::Sending);
+					}
+				}
+
+				if (processResult.closeFd != -1) {
+					result.closeFd = processResult.closeFd;
+					client->setState(client::Client::Closing);
+				}
+
+				if (!remainder.empty() && client->getState() != client::Client::Processing) {
+					// If we have remainder and not waiting for CGI, we might want to process next
+					// request? But we are single threaded per client for now? For now, let's just
+					// append remainder to parser for next loop if keep-alive
+					parser->append(remainder);
+					if (parseResult.endOfInput)
+						parser->markEndOfInput();
+					else
+						continue;
+				}
+				break;
 			}
-			break;
 		}
 	}
 
-	if (disconnected) result.reset(fd);
+	if (disconnected) {
+		result.reset(fd);
+		client->setState(client::Client::Closing);
+	}
+
+	// If Sending, we might want to register EPOLLOUT?
+	// Currently EventResult handles registration via Server.cpp.
+	// We just track state here for now.
+
 	return result;
 }
 
@@ -159,6 +190,7 @@ EventResult EventHandler::processRequest(int fd, const config::Config* config,
 		client::Client* client = ensureClient(fd, config);
 		client->setCgiConfig(decision.server);
 		client->setKeepAlive(keepAlive && !ended);
+		client->setState(client::Client::Processing);
 
 		if (ended) result.closeFd = fd;
 		return result;

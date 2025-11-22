@@ -3,7 +3,7 @@
 using namespace client;
 
 Client::Client(int fd, const config::Config* config) :
-	_fd(fd), _parser(new http::Parser()), _cgiConfig(NULL), _keepAlive(false) {
+	_fd(fd), _parser(new http::Parser()), _cgiConfig(NULL), _keepAlive(false), _state(Receiving) {
 	if (config) {
 		_parser->setMaxBodySize(config->getClientMaxBodySize());
 	}
@@ -31,4 +31,12 @@ bool Client::isKeepAlive() const {
 
 void Client::setKeepAlive(bool keepAlive) {
 	_keepAlive = keepAlive;
+}
+
+Client::State Client::getState() const {
+	return _state;
+}
+
+void Client::setState(State state) {
+	_state = state;
 }
