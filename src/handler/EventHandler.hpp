@@ -7,8 +7,8 @@
 #include <map>
 #include <string>
 
+#include "../client/Client.hpp"
 #include "../config/model/Config.hpp"
-#include "../http/parser/Parser.hpp"
 #include "../router/Router.hpp"
 #include "builder/ResponseBuilder.hpp"
 #include "cgi/ProcessManager.hpp"
@@ -24,23 +24,18 @@ namespace handler {
 			router::Router _router;
 			builder::ResponseBuilder _responseBuilder;
 			cgi::ProcessManager _cgiProcessManager;
-			std::map<int, http::Parser*> _parsers;
-			struct CgiContext {
-					const config::Config* config;
-					bool keepAlive;
-					CgiContext() : config(NULL), keepAlive(false) {}
-					CgiContext(const config::Config* cfg, bool ka) : config(cfg), keepAlive(ka) {}
-			};
-			std::map<int, CgiContext> _cgiContexts;
+			std::map<int, client::Client*> _clients;
 
-			http::Parser* ensureParser(int, const config::Config*);
-			std::string readSocket(int, bool&) const;
 			EventResult handleClientEvent(int, uint32_t, const config::Config*,
 										  server::EpollManager&);
 			EventResult handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
+
 			EventResult processRequest(int, const config::Config*, server::EpollManager&,
 									   http::Parser::Result&);
 			void handleParseError(int, const config::Config*, http::Parser::Result&, EventResult&);
+
+			std::string readSocket(int, bool&) const;
+			client::Client* ensureClient(int, const config::Config*);
 
 		public:
 			EventHandler();

@@ -5,9 +5,8 @@
 
 #include <cerrno>
 
-#include "../config/Defaults.hpp"
 #include "../http/Enums.hpp"
-#include "../http/response/ResponseFactory.hpp"
+#include "../http/response/Factory.hpp"
 #include "../http/response/Serializer.hpp"
 #include "../server/Defaults.hpp"
 #include "cgi/Executor.hpp"
@@ -31,10 +30,11 @@ namespace {
 EventHandler::EventHandler() {}
 
 EventHandler::~EventHandler() {
-	for (std::map<int, http::Parser*>::iterator it = _parsers.begin(); it != _parsers.end(); ++it) {
+	for (std::map<int, client::Client*>::iterator it = _clients.begin(); it != _clients.end();
+		 ++it) {
 		delete it->second;
 	}
-	_parsers.clear();
+	_clients.clear();
 }
 
 EventResult EventHandler::handleEvent(int fd, uint32_t events, const config::Config* config,
@@ -53,11 +53,11 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 		return EventResult();
 
 	bool keepAlive = false;
-	std::map<int, CgiContext>::iterator ctxIt = _cgiContexts.find(clientFd);
-	if (ctxIt != _cgiContexts.end()) {
-		if (ctxIt->second.config) config = ctxIt->second.config;
-		keepAlive = ctxIt->second.keepAlive;
-		_cgiContexts.erase(ctxIt);
+	std::map<int, client::Client*>::iterator it = _clients.find(clientFd);
+	if (it != _clients.end()) {
+		if (it->second->getCgiConfig()) config = it->second->getCgiConfig();
+		keepAlive = it->second->isKeepAlive();
+		// CGI context is part of client, no need to erase explicitly unless we want to reset it
 	}
 
 	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
@@ -72,9 +72,7 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 			rawResponse = _responseBuilder.buildCgi(cgiOutput, keepAlive);
 	} catch (const std::exception&) {
 		rawResponse = http::response::Serializer::serialize(
-			http::response::Factory::createError(http::StatusCode::BadRequest, config),
-			keepAlive);	 // Assuming parseResult.keepAlive was a typo and meant keepAlive from this
-						 // scope
+			http::response::Factory::createError(http::StatusCode::BadRequest, config), keepAlive);
 	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 
@@ -89,7 +87,8 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	bool peerClosed = false;
 	std::string buffer = readSocket(fd, peerClosed);
-	http::Parser* parser = ensureParser(fd, config);
+	client::Client* client = ensureClient(fd, config);
+	http::Parser* parser = client->getParser();
 
 	if (!buffer.empty()) parser->append(buffer);
 	if (peerClosed) disconnected = true;
@@ -156,7 +155,10 @@ EventResult EventHandler::processRequest(int fd, const config::Config* config,
 	if (decision.action == router::RouteDecision::Cgi) {
 		cgi::Executor executor;
 		executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
-		_cgiContexts[fd] = CgiContext(decision.server, keepAlive && !ended);
+
+		client::Client* client = ensureClient(fd, config);
+		client->setCgiConfig(decision.server);
+		client->setKeepAlive(keepAlive && !ended);
 
 		if (ended) result.closeFd = fd;
 		return result;
@@ -170,24 +172,20 @@ EventResult EventHandler::processRequest(int fd, const config::Config* config,
 }
 
 void EventHandler::cleanup(int fd, server::EpollManager& epollManager) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-	if (it != _parsers.end()) {
+	std::map<int, client::Client*>::iterator it = _clients.find(fd);
+	if (it != _clients.end()) {
 		delete it->second;
-		_parsers.erase(it);
+		_clients.erase(it);
 	}
-	_cgiContexts.erase(fd);
 	_cgiProcessManager.removeCgiProcess(fd, epollManager);
 }
 
-http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-	if (it == _parsers.end()) {
-		http::Parser* parser = new http::Parser();
-		size_t maxBodySize = static_cast<size_t>(config ? config->getClientMaxBodySize()
-														: config::defaults::CLIENT_MAX_BODY_SIZE);
-		parser->setMaxBodySize(maxBodySize);
-		_parsers.insert(std::make_pair(fd, parser));
-		return parser;
+client::Client* EventHandler::ensureClient(int fd, const config::Config* config) {
+	std::map<int, client::Client*>::iterator it = _clients.find(fd);
+	if (it == _clients.end()) {
+		client::Client* client = new client::Client(fd, config);
+		_clients.insert(std::make_pair(fd, client));
+		return client;
 	}
 	return it->second;
 }
