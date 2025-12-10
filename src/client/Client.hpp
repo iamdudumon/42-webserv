@@ -20,12 +20,16 @@ namespace client {
 			http::Parser* _parser;
 			const config::Config* _cgiConfig;
 			bool _keepAlive;
+			time_t _lastActivity;
 			State _state;
+			http::Packet* _request;
+			http::Packet* _response;
 
 		public:
 			Client(int, const config::Config*);
 			~Client();
 
+			int getFd() const;
 			http::Parser* getParser();
 
 			const config::Config* getCgiConfig() const;
@@ -35,6 +39,16 @@ namespace client {
 
 			State getState() const;
 			void setState(State);
+
+			http::Packet* getRequest() const;
+			void setRequest(http::Packet*);
+			http::Packet* getResponse() const;
+			void setResponse(http::Packet*);
+			void clearRequest();
+			void clearResponse();
+
+			void updateLastActivity();
+			time_t getLastActivity() const;
 	};
 }  // namespace client
 

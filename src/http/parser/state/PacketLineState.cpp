@@ -5,6 +5,7 @@
 
 #include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
+#include "HeaderState.hpp"
 
 namespace http {
 	void PacketLineState::parse(Parser* parser) {

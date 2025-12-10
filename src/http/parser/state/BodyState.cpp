@@ -3,6 +3,7 @@
 
 #include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
+#include "DoneState.hpp"
 
 namespace http {
 	void BodyState::parse(Parser* parser) {

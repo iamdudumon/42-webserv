@@ -42,6 +42,7 @@ void Server::loop() {
 		while (true) {
 			_epollManager.wait();
 			handleEvents();
+			_eventHandler.checkTimeouts(_epollManager);
 		}
 	} catch (const server::Exception& e) {
 		std::cerr << e.what() << std::endl;

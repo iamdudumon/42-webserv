@@ -30,9 +30,8 @@ namespace handler {
 										  server::EpollManager&);
 			EventResult handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 
-			EventResult processRequest(int, const config::Config*, server::EpollManager&,
-									   http::Parser::Result&);
-			void handleParseError(int, const config::Config*, http::Parser::Result&, EventResult&);
+			void processRequest(client::Client*, const config::Config*, server::EpollManager&);
+			void handleParseError(client::Client*, const config::Config*, http::Parser::Result&);
 
 			std::string readSocket(int, bool&) const;
 			client::Client* ensureClient(int, const config::Config*);
@@ -43,6 +42,7 @@ namespace handler {
 
 			EventResult handleEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 			void cleanup(int, server::EpollManager&);
+			void checkTimeouts(server::EpollManager&);
 	};
 }  // namespace handler
 

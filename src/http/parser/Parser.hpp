@@ -6,12 +6,15 @@
 #include <string>
 
 #include "../model/Packet.hpp"
-#include "./state/BodyState.hpp"
-#include "./state/ChunkedBodyState.hpp"
-#include "./state/DoneState.hpp"
-#include "./state/HeaderState.hpp"
-#include "./state/PacketLineState.hpp"
 #include "./state/ParseState.hpp"
+
+namespace {
+	class BodyState;
+	class ChunkedBodyState;
+	class DoneState;
+	class HeaderState;
+	class PacketLineState;
+}
 
 namespace http {
 	class Parser {
@@ -40,7 +43,7 @@ namespace http {
 						Completed,
 						Error
 					} status;
-					http::Packet packet;
+					http::Packet* packet;
 					std::string leftover;
 					http::StatusCode::Value errorCode;
 					std::string errorMessage;
@@ -48,7 +51,7 @@ namespace http {
 
 					Result() :
 						status(Incomplete),
-						packet(http::StatusLine(), http::Header(), http::Body()),
+						packet(NULL),
 						errorCode(http::StatusCode::BadRequest),
 						errorMessage(
 							http::StatusCode::to_reasonPhrase(http::StatusCode::BadRequest)),
@@ -61,6 +64,7 @@ namespace http {
 			bool inputEnded() const;
 			void markEndOfInput();
 			void setMaxBodySize(size_t);
+			bool hasUnconsumedInput() const;
 
 			Result parse();
 			void append(const std::string&);

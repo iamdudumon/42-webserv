@@ -4,7 +4,9 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <ctime>
 
+#include "../client/Defaults.hpp"
 #include "../http/Enums.hpp"
 #include "../http/response/Factory.hpp"
 #include "../http/response/Serializer.hpp"
@@ -58,7 +60,6 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 		if (it->second->getCgiConfig()) config = it->second->getCgiConfig();
 		keepAlive = it->second->isKeepAlive();
 		it->second->setState(client::Client::Sending);
-		// CGI context is part of client, no need to erase explicitly unless we want to reset it
 	}
 
 	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
@@ -87,75 +88,68 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 	EventResult result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	bool peerClosed = false;
-
 	client::Client* client = ensureClient(fd, config);
-	if (client->getState() == client::Client::None) client->setState(client::Client::Receiving);
+	client->updateLastActivity();
 
 	if (client->getState() == client::Client::Receiving) {
 		std::string buffer = readSocket(fd, peerClosed);
 		http::Parser* parser = client->getParser();
 
-		if (!buffer.empty()) parser->append(buffer);
+		if (buffer.empty()) parser->append(buffer);
 		if (peerClosed) disconnected = true;
 		if (disconnected) parser->markEndOfInput();
-		if (buffer.empty() && !disconnected) return result;
+		if (buffer.empty() && !disconnected && !parser->hasUnconsumedInput()) return result;
 
 		while (true) {
 			http::Parser::Result parseResult = parser->parse();
 			if (parseResult.status == http::Parser::Result::Incomplete) {
+				epollManager.modify(fd, EPOLLIN | EPOLLRDHUP);
 				break;
 			} else if (parseResult.status == http::Parser::Result::Error) {
-				handleParseError(fd, config, parseResult, result);
-				client->setState(client::Client::Closing);
+				handleParseError(client, config, parseResult);
 				break;
 			} else if (parseResult.status == http::Parser::Result::Completed) {
-				EventResult processResult = processRequest(fd, config, epollManager, parseResult);
+				client->setRequest(parseResult.packet);
+				processRequest(client, config, epollManager);
+
 				std::string remainder = parseResult.leftover;
-
-				if (processResult.packet != NULL || !processResult.raw.empty()) {
-					result = processResult;
-					// If we have a response immediately, we are sending (unless it's CGI which sets
-					// Processing) But processRequest sets Processing for CGI. For normal, it
-					// returns response. We need to check if processRequest set state to Processing.
-					if (client->getState() != client::Client::Processing) {
-						client->setState(client::Client::Sending);
-					}
-				}
-
-				if (processResult.closeFd != -1) {
-					result.closeFd = processResult.closeFd;
-					client->setState(client::Client::Closing);
-				}
-
-				if (!remainder.empty() && client->getState() != client::Client::Processing) {
-					// If we have remainder and not waiting for CGI, we might want to process next
-					// request? But we are single threaded per client for now? For now, let's just
-					// append remainder to parser for next loop if keep-alive
+				if (!remainder.empty()) {
 					parser->append(remainder);
-					if (parseResult.endOfInput)
-						parser->markEndOfInput();
-					else
-						continue;
+					if (parseResult.endOfInput) parser->markEndOfInput();
 				}
+
+				if (client->getState() == client::Client::Processing) break;
+				if (!remainder.empty()) continue;
 				break;
 			}
 		}
 	}
 
-	if (disconnected) {
-		result.reset(fd);
-		client->setState(client::Client::Closing);
+	if (disconnected) client->setState(client::Client::Closing);
+	if (client->getState() == client::Client::Sending && client->getResponse()) {
+		result.setPacketResponse(fd, *client->getResponse(), client->isKeepAlive());
+		if (client->isKeepAlive() && !disconnected) {
+			client->clearRequest();
+			client->clearResponse();
+			client->setState(client::Client::Receiving);
+
+			if (client->getParser()->hasUnconsumedInput()) {
+				epollManager.modify(fd, EPOLLIN | EPOLLOUT);
+			}
+		} else {
+			client->setState(client::Client::Closing);
+		}
+	} else if (client->getState() == client::Client::Closing) {
+		if (client->getResponse())
+			result.setPacketResponse(fd, *client->getResponse(), false);
+		else
+			result.reset(fd);
 	}
-
-	// If Sending, we might want to register EPOLLOUT?
-	// Currently EventResult handles registration via Server.cpp.
-	// We just track state here for now.
-
 	return result;
 }
 
-void EventHandler::handleParseError(int fd, const config::Config* config,
-									http::Parser::Result& parseResult, EventResult& result) {
+void EventHandler::handleParseError(client::Client* client, const config::Config* config,
+									http::Parser::Result& parseResult) {
 	const bool hasMessage = !parseResult.errorMessage.empty();
 	const std::string& fallbackBody = parseResult.errorMessage;
 	const std::string fallbackContentType =
@@ -164,43 +158,50 @@ void EventHandler::handleParseError(int fd, const config::Config* config,
 	http::Packet errorPacket =
 		http::response::Factory::createError(parseResult.errorCode, config, fallbackBody,
 											 fallbackContentType);
-	result.setPacketResponse(fd, errorPacket, false);
+
+	client->setResponse(new http::Packet(errorPacket));
+	client->setState(client::Client::Closing);
 }
 
-EventResult EventHandler::processRequest(int fd, const config::Config* config,
-										 server::EpollManager& epollManager,
-										 http::Parser::Result& parseResult) {
-	EventResult result;
-	if (!config) {
-		http::Packet errorPacket =
-			http::response::Factory::createError(http::StatusCode::InternalServerError, config);
-		result.setPacketResponse(fd, errorPacket, false);
-		return result;
-	}
-
-	http::Packet httpRequest = parseResult.packet;
-	bool ended = parseResult.endOfInput;
-	bool keepAlive = shouldKeepAlive(httpRequest.getHeader().get("Connection"));
-
-	router::RouteDecision decision = _router.route(httpRequest, *config);
+void EventHandler::processRequest(client::Client* client, const config::Config* config,
+								  server::EpollManager& epollManager) {
+	http::Packet* httpRequest = client->getRequest();
+	if (!httpRequest) return;
+	bool keepAlive = shouldKeepAlive(httpRequest->getHeader().get("Connection"));
+	router::RouteDecision decision = _router.route(*httpRequest, *config);
 	if (decision.action == router::RouteDecision::Cgi) {
 		cgi::Executor executor;
-		executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
-
-		client::Client* client = ensureClient(fd, config);
+		executor.execute(decision, *httpRequest, epollManager, _cgiProcessManager, client->getFd());
 		client->setCgiConfig(decision.server);
-		client->setKeepAlive(keepAlive && !ended);
+		client->setKeepAlive(keepAlive);
 		client->setState(client::Client::Processing);
-
-		if (ended) result.closeFd = fd;
-		return result;
+		return;
 	}
 
-	http::Packet httpResponse = _responseBuilder.build(httpRequest, decision, *config);
-	result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
+	http::Packet httpResponse = _responseBuilder.build(*httpRequest, decision, *config);
+	client->setResponse(new http::Packet(httpResponse));
+	client->setKeepAlive(keepAlive);
+	client->setState(client::Client::Sending);
+}
 
-	if (ended) result.closeFd = fd;
-	return result;
+void EventHandler::checkTimeouts(server::EpollManager& epollManager) {
+	time_t now = std::time(NULL);
+	std::map<int, client::Client*>::iterator it = _clients.begin();
+
+	while (it != _clients.end()) {
+		if (now - it->second->getLastActivity() > client::defaults::CONNECTION_TIMEOUT) {
+			int fd = it->first;
+			std::map<int, client::Client*>::iterator next = it;
+			++next;
+
+			cleanup(fd, epollManager);
+			epollManager.remove(fd);
+
+			it = next;
+		} else {
+			++it;
+		}
+	}
 }
 
 void EventHandler::cleanup(int fd, server::EpollManager& epollManager) {

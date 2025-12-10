@@ -2,10 +2,11 @@
 #include "Parser.hpp"
 
 #include <limits>
-#include <sstream>
 
 #include "exception/NeedMoreInput.hpp"
 #include "exception/ParserException.hpp"
+#include "state/DoneState.hpp"
+#include "state/PacketLineState.hpp"
 
 namespace http {
 	Parser::Parser() :
@@ -32,6 +33,10 @@ namespace http {
 
 	void Parser::setMaxBodySize(size_t maxSize) {
 		_maxBodySize = maxSize;
+	}
+
+	bool Parser::hasUnconsumedInput() const {
+		return !_rawData.empty();
 	}
 
 	Parser::Result Parser::parse() {
@@ -65,7 +70,8 @@ namespace http {
 
 		if (_complete) {
 			outcome.status = Result::Completed;
-			if (_packet) outcome.packet = *_packet;
+			if (_packet) outcome.packet = _packet;
+			_packet = NULL;
 			if (_pos < _rawData.size()) outcome.leftover = _rawData.substr(_pos);
 			outcome.endOfInput = _inputEnded;
 			reset();
