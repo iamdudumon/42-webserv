@@ -105,6 +105,10 @@ namespace http {
 	}
 
 	std::string Parser::readLine() {
+		if (_pos > 4096) {
+			_rawData.erase(0, _pos);
+			_pos = 0;
+		}
 		size_t next = _rawData.find("\r\n", _pos);
 		if (next == std::string::npos) throw NeedMoreInput();
 		std::string line = _rawData.substr(_pos, next - _pos);
@@ -116,6 +120,10 @@ namespace http {
 		if (_pos + n > _rawData.size()) throw NeedMoreInput();
 		std::string chunk = _rawData.substr(_pos, n);
 		_pos += n;
+		if (_pos > 4096) {
+			_rawData.erase(0, _pos);
+			_pos = 0;
+		}
 		return chunk;
 	}
 }  // namespace http

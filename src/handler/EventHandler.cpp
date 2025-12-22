@@ -80,6 +80,13 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 
 	EventResult result;
 	result.setRawResponse(clientFd, rawResponse, keepAlive);
+
+	client::Client* client = ensureClient(clientFd, config);
+	if (client->isKeepAlive()) {
+		client->clearRequest();
+		client->setState(client::Client::Receiving);
+	} else
+		client->setState(client::Client::Closing);
 	return result;
 }
 
@@ -95,7 +102,7 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 		std::string buffer = readSocket(fd, peerClosed);
 		http::Parser* parser = client->getParser();
 
-		if (buffer.empty()) parser->append(buffer);
+		if (!buffer.empty()) parser->append(buffer);
 		if (peerClosed) disconnected = true;
 		if (disconnected) parser->markEndOfInput();
 		if (buffer.empty() && !disconnected && !parser->hasUnconsumedInput()) return result;
