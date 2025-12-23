@@ -23,11 +23,5 @@ http::Packet AutoIndexBuilder::build(const router::RouteDecision& decision, cons
 		closedir(dp);
 	}
 	ss << "</ul></body></html>";
-
-	http::StatusLine statusLine = {"HTTP/1.1", decision.status,
-								   http::StatusCode::to_reasonPhrase(decision.status)};
-	http::Packet response(statusLine, http::Header(), http::Body());
-	std::string html = ss.str();
-
-	return http::response::Factory::create(http::StatusCode::OK, html, "text/html");
+	return http::response::Factory::create(http::StatusCode::OK, ss.str(), "text/html");
 }

@@ -16,6 +16,9 @@ namespace client {
 			};
 
 		private:
+			Client(const Client&);
+			Client& operator=(const Client&);
+
 			int _fd;
 			http::Parser* _parser;
 			const config::Config* _cgiConfig;
@@ -30,7 +33,7 @@ namespace client {
 			~Client();
 
 			int getFd() const;
-			http::Parser* getParser();
+			std::string readSocket(bool&) const;
 
 			const config::Config* getCgiConfig() const;
 			void setCgiConfig(const config::Config*);
@@ -40,15 +43,19 @@ namespace client {
 			State getState() const;
 			void setState(State);
 
-			http::Packet* getRequest() const;
-			void setRequest(http::Packet*);
+			bool hasRequest() const;
+			http::Packet* takeRequest();
+
 			http::Packet* getResponse() const;
 			void setResponse(http::Packet*);
-			void clearRequest();
 			void clearResponse();
 
 			void updateLastActivity();
-			time_t getLastActivity() const;
+			bool isTimedOut(time_t) const;
+
+			void processData(const std::string&);
+			bool hasUnconsumedInput() const;
+			void markEndOfInput();
 	};
 }  // namespace client
 

@@ -4,10 +4,7 @@
 
 #include <stdint.h>
 
-#include <map>
-#include <string>
-
-#include "../client/Client.hpp"
+#include "../client/ClientManager.hpp"
 #include "../config/model/Config.hpp"
 #include "../router/Router.hpp"
 #include "builder/ResponseBuilder.hpp"
@@ -24,17 +21,16 @@ namespace handler {
 			router::Router _router;
 			builder::ResponseBuilder _responseBuilder;
 			cgi::ProcessManager _cgiProcessManager;
-			std::map<int, client::Client*> _clients;
+			client::ClientManager _clientManager;
 
 			EventResult handleClientEvent(int, uint32_t, const config::Config*,
 										  server::EpollManager&);
 			EventResult handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 
-			void processRequest(client::Client*, const config::Config*, server::EpollManager&);
-			void handleParseError(client::Client*, const config::Config*, http::Parser::Result&);
-
-			std::string readSocket(int, bool&) const;
-			client::Client* ensureClient(int, const config::Config*);
+			void processRequest(client::Client*, const config::Config*, server::EpollManager&,
+								const http::Packet*);
+			void handleParseError(client::Client*, const config::Config*, http::StatusCode::Value,
+								  const std::string&);
 
 		public:
 			EventHandler();
