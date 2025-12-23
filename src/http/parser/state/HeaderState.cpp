@@ -6,7 +6,9 @@
 #include "../../../utils/str_utils.hpp"
 #include "../exception/NeedMoreInput.hpp"
 #include "../exception/ParserException.hpp"
+#include "BodyState.hpp"
 #include "ChunkedBodyState.hpp"
+#include "DoneState.hpp"
 
 namespace http {
 	void HeaderState::parse(Parser* parser) {

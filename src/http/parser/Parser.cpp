@@ -2,10 +2,11 @@
 #include "Parser.hpp"
 
 #include <limits>
-#include <sstream>
 
 #include "exception/NeedMoreInput.hpp"
 #include "exception/ParserException.hpp"
+#include "state/DoneState.hpp"
+#include "state/PacketLineState.hpp"
 
 namespace http {
 	Parser::Parser() :
@@ -32,6 +33,10 @@ namespace http {
 
 	void Parser::setMaxBodySize(size_t maxSize) {
 		_maxBodySize = maxSize;
+	}
+
+	bool Parser::hasUnconsumedInput() const {
+		return !_rawData.empty();
 	}
 
 	Parser::Result Parser::parse() {
@@ -65,7 +70,8 @@ namespace http {
 
 		if (_complete) {
 			outcome.status = Result::Completed;
-			if (_packet) outcome.packet = *_packet;
+			if (_packet) outcome.packet = _packet;
+			_packet = NULL;
 			if (_pos < _rawData.size()) outcome.leftover = _rawData.substr(_pos);
 			outcome.endOfInput = _inputEnded;
 			reset();
@@ -99,6 +105,10 @@ namespace http {
 	}
 
 	std::string Parser::readLine() {
+		if (_pos > 4096) {
+			_rawData.erase(0, _pos);
+			_pos = 0;
+		}
 		size_t next = _rawData.find("\r\n", _pos);
 		if (next == std::string::npos) throw NeedMoreInput();
 		std::string line = _rawData.substr(_pos, next - _pos);
@@ -110,6 +120,10 @@ namespace http {
 		if (_pos + n > _rawData.size()) throw NeedMoreInput();
 		std::string chunk = _rawData.substr(_pos, n);
 		_pos += n;
+		if (_pos > 4096) {
+			_rawData.erase(0, _pos);
+			_pos = 0;
+		}
 		return chunk;
 	}
 }  // namespace http

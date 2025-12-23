@@ -1,26 +1,24 @@
-// FileBuilder.cpp
 #include "FileBuilder.hpp"
 
-#include "../utils/response.hpp"
+#include "../../http/response/Factory.hpp"
+#include "../../utils/file_utils.hpp"
 
 using namespace handler::builder;
 
 http::Packet FileBuilder::build(const router::RouteDecision& decision, const http::Packet&,
 								const config::Config& config) const {
-	std::string fileData;
-	if (!utils::loadPageContent(decision.fsPath, fileData)) {
-		return utils::makeErrorResponse(
+	if (decision.fsPath.empty())
+		return http::response::Factory::createError(
 			http::StatusCode::NotFound, &config,
 			http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
 			http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
-	}
 
-	http::StatusLine statusLine = {"HTTP/1.1", decision.status,
-								   http::StatusCode::to_reasonPhrase(decision.status)};
-	http::Packet response(statusLine, http::Header(), http::Body());
-
-	response.addHeader("Content-Type", decision.contentTypeHint.empty() ? "application/octet-stream"
-																		: decision.contentTypeHint);
-	if (!fileData.empty()) response.appendBody(fileData.data(), fileData.size());
-	return response;
+	FileInfo file = readFile(decision.fsPath.c_str());
+	if (file.error != FileInfo::NONE)
+		return http::response::Factory::createError(
+			http::StatusCode::NotFound, &config,
+			http::StatusCode::to_reasonPhrase(http::StatusCode::NotFound),
+			http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN));
+	return http::response::Factory::createFileResponse(decision.status, decision.fsPath,
+													   decision.contentTypeHint);
 }

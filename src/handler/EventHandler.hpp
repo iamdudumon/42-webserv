@@ -4,13 +4,10 @@
 
 #include <stdint.h>
 
-#include <map>
-#include <string>
-
+#include "../client/ClientManager.hpp"
 #include "../config/model/Config.hpp"
-#include "../http/parser/Parser.hpp"
 #include "../router/Router.hpp"
-#include "RequestHandler.hpp"
+#include "builder/ResponseBuilder.hpp"
 #include "cgi/ProcessManager.hpp"
 #include "model/EventResult.hpp"
 
@@ -22,22 +19,18 @@ namespace handler {
 	class EventHandler {
 		private:
 			router::Router _router;
-			RequestHandler _requestHandler;
+			builder::ResponseBuilder _responseBuilder;
 			cgi::ProcessManager _cgiProcessManager;
-			std::map<int, http::Parser*> _parsers;
-			struct CgiContext {
-					const config::Config* config;
-					bool keepAlive;
-					CgiContext() : config(NULL), keepAlive(false) {}
-					CgiContext(const config::Config* cfg, bool ka) : config(cfg), keepAlive(ka) {}
-			};
-			std::map<int, CgiContext> _cgiContexts;
+			client::ClientManager _clientManager;
 
-			http::Parser* ensureParser(int, const config::Config*);
-			std::string readSocket(int, bool&) const;
 			EventResult handleClientEvent(int, uint32_t, const config::Config*,
 										  server::EpollManager&);
 			EventResult handleCgiEvent(int, uint32_t, const config::Config*, server::EpollManager&);
+
+			void processRequest(client::Client*, const config::Config*, server::EpollManager&,
+								const http::Packet*);
+			void handleParseError(client::Client*, const config::Config*, http::StatusCode::Value,
+								  const std::string&);
 
 		public:
 			EventHandler();
@@ -45,6 +38,7 @@ namespace handler {
 
 			EventResult handleEvent(int, uint32_t, const config::Config*, server::EpollManager&);
 			void cleanup(int, server::EpollManager&);
+			void checkTimeouts(server::EpollManager&);
 	};
 }  // namespace handler
 

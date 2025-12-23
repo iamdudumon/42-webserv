@@ -1,19 +1,14 @@
 // EventHandler.cpp
 #include "EventHandler.hpp"
 
-#include <unistd.h>
-
 #include <cerrno>
+#include <ctime>
 
-#include "../config/Defaults.hpp"
-#include "../handler/utils/response.hpp"
+#include "../client/exception/Exception.hpp"
 #include "../http/Enums.hpp"
-#include "../http/model/Packet.hpp"
-#include "../http/serializer/Serializer.hpp"
-#include "../server/Defaults.hpp"
-#include "../utils/str_utils.hpp"
+#include "../http/response/Factory.hpp"
+#include "../http/response/Serializer.hpp"
 #include "cgi/Executor.hpp"
-#include "cgi/Responder.hpp"
 
 using namespace handler;
 
@@ -33,12 +28,7 @@ namespace {
 
 EventHandler::EventHandler() {}
 
-EventHandler::~EventHandler() {
-	for (std::map<int, http::Parser*>::iterator it = _parsers.begin(); it != _parsers.end(); ++it) {
-		delete it->second;
-	}
-	_parsers.clear();
-}
+EventHandler::~EventHandler() {}
 
 EventResult EventHandler::handleEvent(int fd, uint32_t events, const config::Config* config,
 									  server::EpollManager& epollManager) {
@@ -56,24 +46,34 @@ EventResult EventHandler::handleCgiEvent(int fd, uint32_t events, const config::
 		return EventResult();
 
 	bool keepAlive = false;
-	std::map<int, CgiContext>::iterator ctxIt = _cgiContexts.find(clientFd);
-	if (ctxIt != _cgiContexts.end()) {
-		if (ctxIt->second.config) config = ctxIt->second.config;
-		keepAlive = ctxIt->second.keepAlive;
-		_cgiContexts.erase(ctxIt);
+	client::Client* client = _clientManager.getClient(clientFd);
+	if (client) {
+		if (client->getCgiConfig()) config = client->getCgiConfig();
+		keepAlive = client->isKeepAlive();
+		client->setState(client::Client::Sending);
 	}
-	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
-	std::string rawResponse =
-		(cgiOutput.empty() || !config)
-			? http::Serializer::serialize(
-				  utils::makeErrorResponse(http::StatusCode::InternalServerError, config),
-				  keepAlive)
-			: cgi::Responder::makeCgiResponse(cgiOutput, keepAlive);
 
+	std::string cgiOutput = _cgiProcessManager.getResponse(fd);
+	std::string rawResponse;
+
+	try {
+		if (cgiOutput.empty() || !config)
+			rawResponse = http::response::Serializer::serialize(
+				http::response::Factory::createError(http::StatusCode::InternalServerError, config),
+				keepAlive);
+		else
+			rawResponse = _responseBuilder.buildCgi(cgiOutput, keepAlive);
+	} catch (const std::exception&) {
+		rawResponse = http::response::Serializer::serialize(
+			http::response::Factory::createError(http::StatusCode::BadRequest, config), keepAlive);
+	}
 	_cgiProcessManager.removeCgiProcess(clientFd, epollManager);
 
 	EventResult result;
 	result.setRawResponse(clientFd, rawResponse, keepAlive);
+
+	client = _clientManager.getClient(clientFd);
+	client->setState(client->isKeepAlive() ? client::Client::Receiving : client::Client::Closing);
 	return result;
 }
 
@@ -82,119 +82,107 @@ EventResult EventHandler::handleClientEvent(int fd, uint32_t events, const confi
 	EventResult result;
 	bool disconnected = (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) != 0;
 	bool peerClosed = false;
-	std::string buffer = readSocket(fd, peerClosed);
-	http::Parser* parser = ensureParser(fd, config);
+	client::Client* client = _clientManager.ensureClient(fd, config);
+	client->updateLastActivity();
 
-	if (!buffer.empty()) parser->append(buffer);
-	if (peerClosed) disconnected = true;
-	if (disconnected) parser->markEndOfInput();
-	if (buffer.empty() && !disconnected) return result;
-
-	while (true) {
-		http::Parser::Result parseResult = parser->parse();
-		switch (parseResult.status) {
-			case http::Parser::Result::Incomplete:
-				break;
-			case http::Parser::Result::Error: {
-				const bool hasMessage = !parseResult.errorMessage.empty();
-				const std::string& fallbackBody = parseResult.errorMessage;
-				const std::string fallbackContentType =
-					hasMessage ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
-							   : std::string();
-				http::Packet errorPacket =
-					utils::makeErrorResponse(parseResult.errorCode, config, fallbackBody,
-											 fallbackContentType);
-				result.setPacketResponse(fd, errorPacket, false);
-				break;
-			}
-			case http::Parser::Result::Completed: {
-				if (!config) {
-					http::Packet errorPacket =
-						utils::makeErrorResponse(http::StatusCode::InternalServerError, config);
-					result.setPacketResponse(fd, errorPacket, false);
-					break;
-				}
-
-				http::Packet httpRequest = parseResult.packet;
-				std::string remainder = parseResult.leftover;
-				bool ended = parseResult.endOfInput;
-				bool keepAlive = shouldKeepAlive(httpRequest.getHeader().get("Connection"));
-
-				router::RouteDecision decision = _router.route(httpRequest, *config);
-				if (decision.action == router::RouteDecision::Cgi) {
-					cgi::Executor executor;
-					executor.execute(decision, httpRequest, epollManager, _cgiProcessManager, fd);
-					_cgiContexts[fd] = CgiContext(decision.server, keepAlive && !ended);
-
-					if (ended) result.closeFd = fd;
-					if (!remainder.empty()) {
-						parser->append(remainder);
-						if (ended) parser->markEndOfInput();
-						if (!ended) continue;
-					}
-					break;
-				}
-
-				http::Packet httpResponse =
-					_requestHandler.handle(fd, httpRequest, decision, *config);
-				result.setPacketResponse(fd, httpResponse, keepAlive && !ended);
-
-				if (!remainder.empty()) {
-					parser->append(remainder);
-					if (ended) parser->markEndOfInput();
-					if (!ended) continue;
-				}
-				if (ended) result.closeFd = fd;
-				break;
-			}
+	if (events & EPOLLIN) {
+		std::string buffer = client->readSocket(peerClosed);
+		try {
+			client->processData(buffer);
+		} catch (const client::Exception& e) {
+			handleParseError(client, config, e.getErrorCode(), e.getErrorMessage());
 		}
-		break;
 	}
 
-	if (disconnected) result.reset(fd);
+	if (peerClosed) disconnected = true;
+	if (disconnected) client->markEndOfInput();
+
+	if (client->getState() == client::Client::Receiving) {
+		if (client->hasRequest()) {
+			http::Packet* request = client->takeRequest();
+			processRequest(client, config, epollManager, request);
+			delete request;
+		}
+	}
+
+	if (disconnected) client->setState(client::Client::Closing);
+	if (client->getState() == client::Client::Sending && client->getResponse()) {
+		result.setPacketResponse(fd, *client->getResponse(), client->isKeepAlive());
+		if (client->isKeepAlive() && !disconnected) {
+			client->clearResponse();
+			client->setState(client::Client::Receiving);
+
+			if (client->hasUnconsumedInput()) {
+				try {
+					client->processData("");
+					if (client->hasRequest()) {
+						http::Packet* request = client->takeRequest();
+						processRequest(client, config, epollManager, request);
+						delete request;
+					}
+				} catch (const client::Exception& e) {
+					handleParseError(client, config, e.getErrorCode(), e.getErrorMessage());
+				}
+			}
+
+			epollManager.modify(fd, client->hasUnconsumedInput() || client->hasRequest()
+										? (EPOLLIN | EPOLLOUT)
+										: EPOLLIN);
+		} else
+			client->setState(client::Client::Closing);
+	} else if (client->getState() == client::Client::Closing) {
+		if (client->getResponse())
+			result.setPacketResponse(fd, *client->getResponse(), false);
+		else
+			result.reset(fd);
+	}
 	return result;
 }
 
+void EventHandler::handleParseError(client::Client* client, const config::Config* config,
+									http::StatusCode::Value errorCode,
+									const std::string& errorMessage) {
+	const std::string fallbackContentType =
+		!errorMessage.empty() ? http::ContentType::to_string(http::ContentType::CONTENT_TEXT_PLAIN)
+							  : std::string();
+	http::Packet errorPacket =
+		http::response::Factory::createError(errorCode, config, errorMessage, fallbackContentType);
+
+	client->setResponse(new http::Packet(errorPacket));
+	client->setState(client::Client::Closing);
+}
+
+void EventHandler::processRequest(client::Client* client, const config::Config* config,
+								  server::EpollManager& epollManager,
+								  const http::Packet* httpRequest) {
+	if (!httpRequest) return;
+	bool keepAlive = shouldKeepAlive(httpRequest->getHeader().get("Connection"));
+	router::RouteDecision decision = _router.route(*httpRequest, *config);
+	if (decision.action == router::RouteDecision::Cgi) {
+		cgi::Executor executor;
+		executor.execute(decision, *httpRequest, epollManager, _cgiProcessManager, client->getFd());
+		client->setCgiConfig(decision.server);
+		client->setKeepAlive(keepAlive);
+		client->setState(client::Client::Processing);
+		return;
+	}
+
+	http::Packet httpResponse = _responseBuilder.build(*httpRequest, decision, *config);
+	client->setResponse(new http::Packet(httpResponse));
+	client->setKeepAlive(keepAlive);
+	client->setState(client::Client::Sending);
+}
+
+void EventHandler::checkTimeouts(server::EpollManager& epollManager) {
+	std::vector<int> deadFds = _clientManager.checkTimeouts();
+
+	for (std::vector<int>::iterator it = deadFds.begin(); it != deadFds.end(); ++it) {
+		_cgiProcessManager.removeCgiProcess(*it, epollManager);
+		epollManager.remove(*it);
+	}
+}
+
 void EventHandler::cleanup(int fd, server::EpollManager& epollManager) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-	if (it != _parsers.end()) {
-		delete it->second;
-		_parsers.erase(it);
-	}
-	_cgiContexts.erase(fd);
+	_clientManager.removeClient(fd);
 	_cgiProcessManager.removeCgiProcess(fd, epollManager);
-}
-
-http::Parser* EventHandler::ensureParser(int fd, const config::Config* config) {
-	std::map<int, http::Parser*>::iterator it = _parsers.find(fd);
-	if (it == _parsers.end()) {
-		http::Parser* parser = new http::Parser();
-		size_t maxBodySize = static_cast<size_t>(config ? config->getClientMaxBodySize()
-														: config::defaults::CLIENT_MAX_BODY_SIZE);
-		parser->setMaxBodySize(maxBodySize);
-		_parsers.insert(std::make_pair(fd, parser));
-		return parser;
-	}
-	return it->second;
-}
-
-std::string EventHandler::readSocket(int socketFd, bool& peerClosed) const {
-	char buffer[server::defaults::BUFFER_SIZE] = {0};
-	std::string request;
-	peerClosed = false;
-
-	while (true) {
-		ssize_t readSize = ::read(socketFd, buffer, server::defaults::BUFFER_SIZE);
-		if (readSize > 0) {
-			request.append(buffer, readSize);
-			if (readSize < server::defaults::BUFFER_SIZE) break;
-		} else if (readSize == 0) {
-			peerClosed = true;
-			break;
-		} else {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-			return std::string();
-		}
-	}
-	return request;
 }
