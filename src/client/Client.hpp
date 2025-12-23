@@ -1,6 +1,8 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <ctime>
+
 #include "../config/model/Config.hpp"
 #include "../http/parser/Parser.hpp"
 
